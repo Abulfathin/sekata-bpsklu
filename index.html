@@ -906,7 +906,7 @@
     });
 
     // =====================================================
-    // RIWAYAT (DIBATASI MUKASIMAL 10 BARIS TERBARU)
+    // RIWAYAT (DIBATASI MAKSIMAL 10 BARIS TERBARU)
     // =====================================================
     function renderHistory(data) {
       const section = document.getElementById('history-section');
@@ -934,7 +934,6 @@
 
       tbody.innerHTML = '';
 
-      // HANYA AMBIL 10 DATA TERBARU
       sorted.slice(0, 10).forEach(rec => tbody.appendChild(createRow(rec)));
 
       if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -968,7 +967,7 @@
     }
 
     // =====================================================
-    // SURAT KONFIRMASI KETUA SLS (DENGAN DESA OTOMATIS)
+    // SURAT KONFIRMASI KETUA SLS
     // =====================================================
     function suratRows(slsValue) {
       const selectedSlsNormalized = normalizeText(slsValue);
@@ -1051,8 +1050,25 @@
       const desa = document.getElementById('surat-desa').value.trim();
       const tanggal = document.getElementById('surat-tanggal').value;
       const ketua = document.getElementById('surat-ketua').value.trim();
-      if (!sls || !desa || !tanggal || !ketua) return null;
-      return { nama_sls: sls, nama_desa: desa, tanggal_ttd: tanggal, nama_ketua: ketua, rows: suratRows(sls) };
+
+      if (!sls || !desa || !tanggal || !ketua) {
+        alert("Harap lengkapi semua isian: Nama SLS, Desa, Tanggal, dan Nama Ketua RT!");
+        return null;
+      }
+
+      const rows = suratRows(sls);
+      if (rows.length === 0) {
+        alert("Tidak ada data assignment dengan tindakan 'Sudah Sesuai' untuk SLS ini.");
+        return null;
+      }
+
+      return { 
+        nama_sls: sls, 
+        nama_desa: desa, 
+        tanggal_ttd: tanggal, 
+        nama_ketua: ketua, 
+        rows: rows 
+      };
     }
 
     async function openSuratWord() {
@@ -1076,58 +1092,60 @@
     }
 
     function buildSurat() {
-    const payload = suratPayload();
-    if (!payload) return;
-    
-    const prettyDate = new Date(`${payload.tanggal_ttd}T00:00:00`).toLocaleDateString('id-ID', {
+      const payload = suratPayload();
+      if (!payload) return;
+
+      const prettyDate = new Date(`${payload.tanggal_ttd}T00:00:00`).toLocaleDateString('id-ID', {
         day: 'numeric', 
         month: 'long', 
         year: 'numeric'
-    });
-    
-    const body = payload.rows.map((r, i) => 
+      });
+
+      const body = payload.rows.map((r, i) => 
         `<tr>
-            <td style="text-align:center;">${i + 1}</td>
-            <td>${esc(r.nama_assignment)}</td>
-            <td>${esc(r.nama_usaha)}</td>
-            <td style="text-align:center;">Tidak Ditemukan</td>
+          <td style="text-align:center;">${i + 1}</td>
+          <td>${esc(r.nama_assignment)}</td>
+          <td>${esc(r.nama_usaha)}</td>
+          <td style="text-align:center;">Tidak Ditemukan</td>
         </tr>`
-    ).join('');
+      ).join('');
 
-    document.getElementById('surat-preview').innerHTML = `
+      const previewEl = document.getElementById('surat-preview');
+      const actionsEl = document.getElementById('surat-actions');
+
+      previewEl.innerHTML = `
         <article id="surat-document" class="bg-white text-slate-900 p-4">
-            <!-- Judul dibuat Rata Tengah (text-align: center) -->
-            <h3 style="text-align: center; font-weight: bold; margin-bottom: 16px; font-size: 14pt;">
-                DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}
-            </h3>
+          <h3 style="text-align: center; font-weight: bold; margin-bottom: 16px; font-size: 13pt;">
+            DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}
+          </h3>
 
-            <table class="surat-table text-xs" style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
-                <thead>
-                    <tr>
-                        <th style="width: 8%;">No</th>
-                        <th>Nama Keluarga</th>
-                        <th>Nama Usaha</th>
-                        <th style="width: 20%;">Status</th>
-                    </tr>
-                </thead>
-                <tbody>${body}</tbody>
-            </table>
+          <table class="surat-table text-xs" style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+            <thead>
+              <tr>
+                <th style="width: 8%;">No</th>
+                <th>Nama Keluarga</th>
+                <th>Nama Usaha</th>
+                <th style="width: 20%;">Status</th>
+              </tr>
+            </thead>
+            <tbody>${body}</tbody>
+          </table>
 
-            <!-- Blok Tanda Tangan dibuat Rata Kanan (text-align: right) & Kata 'Ketua' tidak di-bold -->
-            <div style="text-align: right; margin-top: 30px;">
-                <div style="display: inline-block; text-align: center; min-width: 200px;">
-                    ${esc(payload.nama_desa)}, ${prettyDate}<br><br>
-                    <span style="font-weight: normal;">Ketua</span><br>
-                    ${esc(payload.nama_sls)}<br><br><br><br>
-                    <strong>${esc(payload.nama_ketua)}</strong>
-                </div>
+          <div style="text-align: right; margin-top: 30px;">
+            <div style="display: inline-block; text-align: center; min-width: 200px;">
+              ${esc(payload.nama_desa)}, ${prettyDate}<br><br>
+              <span style="font-weight: normal;">Ketua</span><br>
+              ${esc(payload.nama_sls)}<br><br><br><br>
+              <strong>${esc(payload.nama_ketua)}</strong>
             </div>
+          </div>
         </article>
-    `;
+      `;
 
-    document.getElementById('surat-preview').classList.remove('hidden');
-    document.getElementById('surat-actions').classList.remove('hidden');
-}
+      previewEl.classList.remove('hidden');
+      actionsEl.classList.remove('hidden');
+      previewEl.scrollIntoView({ behavior: 'smooth' });
+    }
 
     async function generateSuratWord() {
       try {
@@ -1139,11 +1157,44 @@
         const styles = `<style>
           @page { size: A4; margin: 2cm; }
           body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; }
-          table { width: 100%; border-collapse: collapse; border: 1px solid #000; }
+          h3 { text-align: center; font-weight: bold; }
+          table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 20px; }
           th, td { border: 1px solid #000; padding: 6px 8px; vertical-align: middle; }
           th { text-align: center; font-weight: bold; }
+          .ttd-container { text-align: right; margin-top: 30px; }
+          .ttd-box { display: inline-block; text-align: center; width: 220px; }
         </style>`;
-        const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">${styles}</head><body>${suratElement.innerHTML}</body></html>`;
+
+        const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">${styles}</head><body>
+          <h3 align="center">DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:8%;">No</th>
+                <th>Nama Keluarga</th>
+                <th>Nama Usaha</th>
+                <th style="width:20%;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${payload.rows.map((r, i) => `<tr>
+                <td style="text-align:center;">${i + 1}</td>
+                <td>${esc(r.nama_assignment)}</td>
+                <td>${esc(r.nama_usaha)}</td>
+                <td style="text-align:center;">Tidak Ditemukan</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          <div align="right" class="ttd-container">
+            <div class="ttd-box">
+              ${esc(payload.nama_desa)}, ${new Date(`${payload.tanggal_ttd}T00:00:00`).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}<br><br>
+              Ketua<br>
+              ${esc(payload.nama_sls)}<br><br><br><br>
+              <b>${esc(payload.nama_ketua)}</b>
+            </div>
+          </div>
+        </body></html>`;
+
         const blob = new Blob([html], { type: 'application/msword' });
         const blobURL = URL.createObjectURL(blob);
 
@@ -1159,15 +1210,24 @@
       }
     }
 
-    document.getElementById('surat-download').addEventListener('click', generateSuratWord);
-
     // =====================================================
-    // START INITIALIZATION
+    // INITIALIZATION & EVENT LISTENERS
     // =====================================================
     document.addEventListener('DOMContentLoaded', async function() {
       try {
         await loadCSV();
         if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Mengaitkan Event Listener untuk Tombol Surat Konfirmasi
+        const btnCreate = document.getElementById('surat-create');
+        if (btnCreate) btnCreate.addEventListener('click', buildSurat);
+
+        const btnPrint = document.getElementById('surat-print');
+        if (btnPrint) btnPrint.addEventListener('click', openSuratWord);
+
+        const btnDownload = document.getElementById('surat-download');
+        if (btnDownload) btnDownload.addEventListener('click', generateSuratWord);
+
       } catch (error) {
         console.error('Initialization error:', error);
       }
