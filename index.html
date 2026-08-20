@@ -33,10 +33,8 @@
     .step-item.completed .step-connector { background:#22C55E; }
     .step-item.active .step-connector { background:#0061A8; }
 
-    /* SLS found animation */
+    /* Animations */
     .sls-found-anim { animation: slideDown 0.4s ease-out; }
-
-    /* Assignment count animation */
     .assignment-count-anim { animation: slideDown 0.4s ease-out; }
     @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
 
@@ -63,13 +61,13 @@
   <header class="header-bg w-full">
     <div class="max-w-lg mx-auto px-4 py-6 text-center relative z-10">
       <div class="flex items-center justify-center gap-3 mb-2">
-        <img loading="lazy" class="w-16 h-16 object-contain rounded-lg" alt="Logo BPS" src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg">
-        <div class="text-left">
-          <h2 class="font-extrabold uppercase tracking-wide text-white text-sm">SENSUS EKONOMI 2026</h2>
-          <p class="text-sm opacity-90 text-white">BPS Kabupaten Lombok Utara</p>
+        <img loading="lazy" class="w-14 h-14 object-contain rounded-lg" alt="Logo BPS" src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg">
+        <div class="text-left leading-tight">
+          <h2 class="font-extrabold italic uppercase tracking-wide text-white text-base">BADAN PUSAT STATISTIK</h2>
+          <h2 class="font-extrabold italic uppercase tracking-wide text-white text-base">KABUPATEN LOMBOK UTARA</h2>
         </div>
       </div>
-      <h1 class="font-bold leading-tight text-white text-xl">SENSUS EKONOMI KONFIRMASI DATA (SEKATA)</h1>
+      <h1 class="font-bold leading-tight text-white text-xl mt-3">SENSUS EKONOMI KONFIRMASI DATA (SEKATA)</h1>
       <p class="mt-1 text-sm opacity-90 text-white">Laporkan assignment yang tidak ditemukan di lapangan</p>
     </div>
   </header>
@@ -578,7 +576,7 @@
     }
 
     // =====================================================
-    // EVENT KETIKA PPL DIPILIH (TERMASUK NAMA DESA)
+    // EVENT KETIKA PPL DIPILIH
     // =====================================================
     function triggerPPLChange() {
       setStep(1);
@@ -1117,6 +1115,14 @@
 
       previewEl.innerHTML = `
         <article id="surat-document" class="bg-white text-slate-900 p-4">
+          <!-- Kop Surat BPS -->
+          <div style="display: flex; items-center: center; gap: 12px; margin-bottom: 20px; border-b: 2px solid #000; padding-bottom: 10px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" style="width: 50px; height: 50px; object-fit: contain;">
+            <div style="font-weight: 800; font-style: italic; font-size: 11pt; line-height: 1.2; color: #003B73;">
+              BADAN PUSAT STATISTIK<br>KABUPATEN LOMBOK UTARA
+            </div>
+          </div>
+
           <h3 style="text-align: center; font-weight: bold; margin-bottom: 16px; font-size: 13pt;">
             KONFIRMASI DAFTAR USAHA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}
           </h3>
@@ -1169,11 +1175,25 @@
           table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 20px; }
           th, td { border: 1px solid #000; padding: 6px 8px; vertical-align: middle; }
           th { text-align: center; font-weight: bold; }
+          .kop-table { width: 100%; border: none; margin-bottom: 15px; border-bottom: 2px solid #000; }
+          .kop-table td { border: none; padding: 0 0 8px 0; vertical-align: middle; }
           .ttd-table { width: 100%; border: none; margin-top: 30px; }
           .ttd-table td { border: none; padding: 0; }
         </style>`;
 
         const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">${styles}</head><body>
+          <!-- Kop Surat BPS untuk Word -->
+          <table class="kop-table">
+            <tr>
+              <td style="width: 60px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" width="50" height="50">
+              </td>
+              <td style="font-weight: bold; font-style: italic; font-size: 11pt; color: #003B73;">
+                BADAN PUSAT STATISTIK<br>KABUPATEN LOMBOK UTARA
+              </td>
+            </tr>
+          </table>
+
           <h3 align="center">KONFIRMASI DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3>
           <table>
             <thead>
