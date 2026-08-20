@@ -738,7 +738,7 @@
       const val = rawVal.startsWith('Berubah Status') ? 'Berubah Status' : rawVal;
 
       selectedTindakan = val;
-      document.getElementById('select-tindakan').value = val;
+      document.getElementById('select-[#select-tindakan]').value = val;
 
       const cls = val === 'Sudah Sesuai' ? 'active-sudah-sesuai' :
                   val === 'Salah SLS' ? 'active-salah-sls' :
@@ -967,7 +967,7 @@
     }
 
     // =====================================================
-    // SURAT KONFIRMASI KETUA SLS
+    // SURAT KONFIRMASI KETUA SLS (DENGAN MATCHING DESA DARI SHEET1)
     // =====================================================
     function suratRows(slsValue) {
       const selectedSlsNormalized = normalizeText(slsValue);
@@ -994,7 +994,29 @@
         const rawSls = String(item.nama_sls || '').trim();
         if (!rawSls) return;
 
-        const namaDesa = String(item.nama_desa || item.Nama_Desa || item.desa || item.Desa || '').trim();
+        const rawPpl = String(item.nama_ppl || '').trim();
+
+        // Cari pencocokan desa di csvData (Sheet1) berdasarkan Nama SLS dan PPL
+        let matchedDesa = '';
+        if (Array.isArray(csvData) && csvData.length > 0) {
+          const matchRow = csvData.find(r => 
+            normalizeText(getVal(r, COL_SLS)) === normalizeText(rawSls) &&
+            normalizeText(extractPPLName(getVal(r, COL_PPL))) === normalizeText(extractPPLName(rawPpl))
+          );
+          if (matchRow) {
+            matchedDesa = getVal(matchRow, COL_DESA) || getVal(matchRow, 'Nama Desa') || getVal(matchRow, 'nama_desa');
+          }
+        }
+
+        // Jika tidak ditemukan via PPL, cari hanya berdasarkan SLS di Sheet1
+        if (!matchedDesa && Array.isArray(csvData) && csvData.length > 0) {
+          const fallbackRow = csvData.find(r => normalizeText(getVal(r, COL_SLS)) === normalizeText(rawSls));
+          if (fallbackRow) {
+            matchedDesa = getVal(fallbackRow, COL_DESA) || getVal(fallbackRow, 'Nama Desa') || getVal(fallbackRow, 'nama_desa');
+          }
+        }
+
+        const namaDesa = String(matchedDesa || item.nama_desa || item.Nama_Desa || item.desa || '').trim();
         const key = `${normalizeText(rawSls)}___${normalizeText(namaDesa)}`;
 
         if (!slsGroupMap[key]) {
@@ -1116,7 +1138,7 @@
       previewEl.innerHTML = `
         <article id="surat-document" class="bg-white text-slate-900 p-4">
           <!-- Kop Surat BPS -->
-          <div style="display: flex; items-center: center; gap: 12px; margin-bottom: 20px; border-b: 2px solid #000; padding-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" style="width: 50px; height: 50px; object-fit: contain;">
             <div style="font-weight: 800; font-style: italic; font-size: 11pt; line-height: 1.2; color: #003B73;">
               BADAN PUSAT STATISTIK<br>KABUPATEN LOMBOK UTARA
@@ -1194,7 +1216,7 @@
             </tr>
           </table>
 
-          <h3 align="center">KONFIRMASI DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3>
+          <h3 align="center">KONFIRMASI DAFTAR USAHA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3>
           <table>
             <thead>
               <tr>
