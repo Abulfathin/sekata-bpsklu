@@ -1076,17 +1076,58 @@
     }
 
     function buildSurat() {
-      const payload = suratPayload();
-      if (!payload) return;
-      const prettyDate = new Date(`${payload.tanggal_ttd}T00:00:00`).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
-      const body = payload.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.nama_assignment)}</td><td>${esc(r.nama_usaha)}</td><td>Tidak Ditemukan</td></tr>`).join('');
-      document.getElementById('surat-preview').innerHTML = `<article id="surat-document" class="bg-white text-slate-900 p-4"><h3 class="text-center font-bold mb-4">DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3><table class="surat-table text-xs"><thead><tr><th>No</th><th>Nama Keluarga</th><th>Nama Usaha</th><th>Status</th></tr></thead><tbody>${body}</tbody></table><div class="ml-auto mt-10 w-44 text-center">${esc(payload.nama_desa)}, ${prettyDate}<br><br><strong>Ketua</strong><br>${esc(payload.nama_sls)}<br><br>${esc(payload.nama_ketua)}</div></article>`;
-      document.getElementById('surat-preview').classList.remove('hidden');
-      document.getElementById('surat-actions').classList.remove('hidden');
-    }
+    const payload = suratPayload();
+    if (!payload) return;
+    
+    const prettyDate = new Date(`${payload.tanggal_ttd}T00:00:00`).toLocaleDateString('id-ID', {
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric'
+    });
+    
+    const body = payload.rows.map((r, i) => 
+        `<tr>
+            <td style="text-align:center;">${i + 1}</td>
+            <td>${esc(r.nama_assignment)}</td>
+            <td>${esc(r.nama_usaha)}</td>
+            <td style="text-align:center;">Tidak Ditemukan</td>
+        </tr>`
+    ).join('');
 
-    document.getElementById('surat-create').addEventListener('click', buildSurat);
-    document.getElementById('surat-print').addEventListener('click', openSuratWord);
+    document.getElementById('surat-preview').innerHTML = `
+        <article id="surat-document" class="bg-white text-slate-900 p-4">
+            <!-- Judul dibuat Rata Tengah (text-align: center) -->
+            <h3 style="text-align: center; font-weight: bold; margin-bottom: 16px; font-size: 14pt;">
+                DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}
+            </h3>
+
+            <table class="surat-table text-xs" style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">No</th>
+                        <th>Nama Keluarga</th>
+                        <th>Nama Usaha</th>
+                        <th style="width: 20%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>${body}</tbody>
+            </table>
+
+            <!-- Blok Tanda Tangan dibuat Rata Kanan (text-align: right) & Kata 'Ketua' tidak di-bold -->
+            <div style="text-align: right; margin-top: 30px;">
+                <div style="display: inline-block; text-align: center; min-width: 200px;">
+                    ${esc(payload.nama_desa)}, ${prettyDate}<br><br>
+                    <span style="font-weight: normal;">Ketua</span><br>
+                    ${esc(payload.nama_sls)}<br><br><br><br>
+                    <strong>${esc(payload.nama_ketua)}</strong>
+                </div>
+            </div>
+        </article>
+    `;
+
+    document.getElementById('surat-preview').classList.remove('hidden');
+    document.getElementById('surat-actions').classList.remove('hidden');
+}
 
     async function generateSuratWord() {
       try {
