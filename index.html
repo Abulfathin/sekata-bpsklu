@@ -203,7 +203,7 @@
               <i data-lucide="building-2" style="width:18px;height:18px;"></i>
             </span>
             <select id="select-assignment" class="w-full border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30 appearance-none bg-white" required disabled>
-              <option value="">Pilih usaha</option>
+              <option value="">Pilih Usaha</option>
             </select>
             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
               <i data-lucide="chevron-down" style="width:16px;height:16px;"></i>
@@ -519,11 +519,13 @@
       const slsTujuanList = document.getElementById('sls-tujuan-list');
       const hiddenSel = document.getElementById('select-sls-tujuan');
 
+      const rawList = Array.isArray(referenceData) ? referenceData : [];
+
       const unique = [...new Set(
-        referenceData.map(item => {
+        rawList.map(item => {
           if (typeof item === 'object' && item !== null) {
             const sls = String(item.Nama_SLS || item.nama_sls || item.nmsls || item.label_lengkap || '').trim();
-            const desa = String(item.Nama_Desa || item.nama_desa || item.Desa || '').trim();
+            const desa = String(item.Nama_Desa || item.nama_desa || item.Desa || item.desa || '').trim();
             if (!sls) return '';
             return desa ? `${sls} - DESA ${desa}` : sls;
           }
@@ -585,7 +587,7 @@
       const pplVal = (document.getElementById('search-ppl').value || '').trim();
 
       slsSel.innerHTML = '<option value="">-- Pilih SLS --</option>';
-      asSel.innerHTML = '<option value="">Pilih usaha</option>';
+      asSel.innerHTML = '<option value="">Pilih Usaha</option>';
       slsSel.disabled = true;
       asSel.disabled = true;
 
@@ -658,7 +660,7 @@
     document.getElementById('select-sls').addEventListener('change', function() {
       setStep(2);
       const asSel = document.getElementById('select-assignment');
-      asSel.innerHTML = '<option value="">-- Pilih Assignment --</option>';
+      asSel.innerHTML = '<option value="">Pilih Usaha</option>';
       asSel.disabled = true;
 
       const banner = document.getElementById('assignment-count-banner');
@@ -861,7 +863,7 @@
       document.getElementById('search-ppl').value = '';
       document.getElementById('select-ppl').value = '';
       document.getElementById('select-sls').innerHTML = '<option value="">-- Pilih SLS --</option>';
-      document.getElementById('select-assignment').innerHTML = '<option value="">Pilih usaha</option>';
+      document.getElementById('select-assignment').innerHTML = '<option value="">Pilih Usaha</option>';
       document.getElementById('assignment-info').textContent = 'Nama assignment akan muncul di sini';
       document.getElementById('select-sls-tujuan').innerHTML = '<option value="">-- Pilih SLS Tujuan --</option>';
       document.getElementById('search-sls-tujuan').value = '';
@@ -994,7 +996,7 @@
         const rawSls = String(item.nama_sls || '').trim();
         if (!rawSls) return;
 
-        const namaDesa = String(item.nama_desa || item.Nama_Desa || item.desa || '').trim();
+        const namaDesa = String(item.nama_desa || item.Nama_Desa || item.desa || item.Desa || '').trim();
         const key = `${normalizeText(rawSls)}___${normalizeText(namaDesa)}`;
 
         if (!slsGroupMap[key]) {
@@ -1014,7 +1016,7 @@
 
       select.innerHTML = '<option value="">-- Pilih Nama SLS/RT --</option>' +
         uniqueSls.map(item =>
-          `<option value="${esc(item.nama)}" data-desa="${esc(item.nama_desa)}">${esc(item.displayText)} (${item.jumlah} assignment)</option>`
+          `<option value="${esc(item.nama)}" data-desa="${esc(item.nama_desa)}">${esc(item.displayText)} (${item.jumlah})</option>`
         ).join('');
 
       section.classList.add('hidden');
@@ -1116,7 +1118,7 @@
       previewEl.innerHTML = `
         <article id="surat-document" class="bg-white text-slate-900 p-4">
           <h3 style="text-align: center; font-weight: bold; margin-bottom: 16px; font-size: 13pt;">
-            DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}
+            KONFIRMASI DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}
           </h3>
 
           <table class="surat-table text-xs" style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
@@ -1131,8 +1133,8 @@
             <tbody>${body}</tbody>
           </table>
 
-          <div style="text-align: right; margin-top: 30px;">
-            <div style="display: inline-block; text-align: center; min-width: 200px;">
+          <div style="display: flex; justify-content: flex-end; margin-top: 30px;">
+            <div style="text-align: center; min-width: 220px;">
               ${esc(payload.nama_desa)}, ${prettyDate}<br><br>
               <span style="font-weight: normal;">Ketua</span><br>
               ${esc(payload.nama_sls)}<br><br><br><br>
@@ -1154,19 +1156,25 @@
         const payload = suratPayload();
         if (!payload) return;
 
+        const prettyDate = new Date(`${payload.tanggal_ttd}T00:00:00`).toLocaleDateString('id-ID', {
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric'
+        });
+
         const styles = `<style>
           @page { size: A4; margin: 2cm; }
           body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; }
-          h3 { text-align: center; font-weight: bold; }
+          h3 { text-align: center; font-weight: bold; margin-bottom: 16px; }
           table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 20px; }
           th, td { border: 1px solid #000; padding: 6px 8px; vertical-align: middle; }
           th { text-align: center; font-weight: bold; }
-          .ttd-container { text-align: right; margin-top: 30px; }
-          .ttd-box { display: inline-block; text-align: center; width: 220px; }
+          .ttd-table { width: 100%; border: none; margin-top: 30px; }
+          .ttd-table td { border: none; padding: 0; }
         </style>`;
 
         const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">${styles}</head><body>
-          <h3 align="center">DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3>
+          <h3 align="center">KONFIRMASI DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3>
           <table>
             <thead>
               <tr>
@@ -1185,14 +1193,17 @@
               </tr>`).join('')}
             </tbody>
           </table>
-          <div align="right" class="ttd-container">
-            <div class="ttd-box">
-              ${esc(payload.nama_desa)}, ${new Date(`${payload.tanggal_ttd}T00:00:00`).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}<br><br>
-              Ketua<br>
-              ${esc(payload.nama_sls)}<br><br><br><br>
-              <b>${esc(payload.nama_ketua)}</b>
-            </div>
-          </div>
+          <table class="ttd-table">
+            <tr>
+              <td style="width: 50%;"></td>
+              <td style="width: 50%; text-align: center;">
+                ${esc(payload.nama_desa)}, ${prettyDate}<br><br>
+                Ketua<br>
+                ${esc(payload.nama_sls)}<br><br><br><br>
+                <b>${esc(payload.nama_ketua)}</b>
+              </td>
+            </tr>
+          </table>
         </body></html>`;
 
         const blob = new Blob([html], { type: 'application/msword' });
