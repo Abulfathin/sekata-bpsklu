@@ -724,7 +724,7 @@
     });
 
     // =====================================================
-    // EVENT TINDAKAN
+    // EVENT TINDAKAN (DIPERBAIKI)
     // =====================================================
     document.getElementById('tindakan-group').addEventListener('click', function(e) {
       const btn = e.target.closest('.tindakan-btn');
@@ -738,7 +738,10 @@
       const val = rawVal.startsWith('Berubah Status') ? 'Berubah Status' : rawVal;
 
       selectedTindakan = val;
-      document.getElementById('select-[#select-tindakan]').value = val;
+      const selectTindakanEl = document.getElementById('select-tindakan');
+      if (selectTindakanEl) {
+        selectTindakanEl.value = val;
+      }
 
       const cls = val === 'Sudah Sesuai' ? 'active-sudah-sesuai' :
                   val === 'Salah SLS' ? 'active-salah-sls' :
@@ -753,7 +756,8 @@
         populateSLSTujuan();
       } else {
         section.classList.add('hidden');
-        document.getElementById('select-sls-tujuan').value = '';
+        const selectSlsTujuanEl = document.getElementById('select-sls-tujuan');
+        if (selectSlsTujuanEl) selectSlsTujuanEl.value = '';
       }
     });
 
@@ -967,7 +971,7 @@
     }
 
     // =====================================================
-    // SURAT KONFIRMASI KETUA SLS (DENGAN MATCHING DESA DARI SHEET1)
+    // SURAT KONFIRMASI KETUA SLS (MATCHING DESA DARI SHEET1)
     // =====================================================
     function suratRows(slsValue) {
       const selectedSlsNormalized = normalizeText(slsValue);
@@ -996,7 +1000,7 @@
 
         const rawPpl = String(item.nama_ppl || '').trim();
 
-        // Cari pencocokan desa di csvData (Sheet1) berdasarkan Nama SLS dan PPL
+        // Pencocokan nama desa dari csvData (Sheet1)
         let matchedDesa = '';
         if (Array.isArray(csvData) && csvData.length > 0) {
           const matchRow = csvData.find(r => 
@@ -1008,7 +1012,7 @@
           }
         }
 
-        // Jika tidak ditemukan via PPL, cari hanya berdasarkan SLS di Sheet1
+        // Fallback pencocokan SLS saja jika tidak ketemu via PPL
         if (!matchedDesa && Array.isArray(csvData) && csvData.length > 0) {
           const fallbackRow = csvData.find(r => normalizeText(getVal(r, COL_SLS)) === normalizeText(rawSls));
           if (fallbackRow) {
