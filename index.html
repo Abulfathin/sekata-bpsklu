@@ -523,30 +523,40 @@
     document.getElementById('show-surat-btn').addEventListener('click', () => showPage('surat'));
     document.getElementById('show-progres-btn').addEventListener('click', () => showPage('progres'));
 
-    // Fungsi Menu Cek Progres Entri
-    function loadProgresSlsList() {
+   // =====================================================
+    // PERBAIKAN MENU CEK PROGRES MENGGUNAKAN FETCH (UNTUK VERCEL)
+    // =====================================================
+
+    async function loadProgresSlsList() {
       const petugas = document.getElementById('progres-petugas').value.trim();
       const selectSls = document.getElementById('progres-sls');
-      selectSls.innerHTML = '<option value="">-- Pilih SLS --</option>';
+      selectSls.innerHTML = '<option value="">-- Memuat SLS --</option>';
       selectSls.disabled = true;
       if (!petugas) return;
 
-      google.script.run.withSuccessHandler(function(slsArray) {
-        if (!slsArray || slsArray.length === 0) {
+      try {
+        const response = await fetch(`${SCRIPT_URL}?action=getSlsByPetugas&petugas=${encodeURIComponent(petugas)}`);
+        const result = await response.json();
+        
+        selectSls.innerHTML = '<option value="">-- Pilih SLS --</option>';
+        if (result.success && result.data && result.data.length > 0) {
+          result.data.forEach(sls => {
+            const opt = document.createElement('option');
+            opt.value = sls;
+            opt.textContent = sls;
+            selectSls.appendChild(opt);
+          });
+          selectSls.disabled = false;
+        } else {
           selectSls.innerHTML = '<option value="">Tidak ada SLS ditemukan</option>';
-          return;
         }
-        slsArray.forEach(sls => {
-          const opt = document.createElement('option');
-          opt.value = sls;
-          opt.textContent = sls;
-          selectSls.appendChild(opt);
-        });
-        selectSls.disabled = false;
-      }).getSlsByPetugas(petugas);
+      } catch (err) {
+        console.error(err);
+        selectSls.innerHTML = '<option value="">Gagal memuat SLS</option>';
+      }
     }
 
-    function loadProgresTable() {
+    async function loadProgresTable() {
       const petugas = document.getElementById('progres-petugas').value.trim();
       const sls = document.getElementById('progres-sls').value.trim();
       const tbody = document.getElementById('progres-tbody');
@@ -554,14 +564,17 @@
 
       if (!petugas || !sls) return;
 
-      google.script.run.withSuccessHandler(function(rows) {
+      try {
+        const response = await fetch(`${SCRIPT_URL}?action=getAssignments&petugas=${encodeURIComponent(petugas)}&sls=${encodeURIComponent(sls)}`);
+        const result = await response.json();
+        
         tbody.innerHTML = '';
-        if (!rows || rows.length === 0) {
+        if (!result.success || !result.data || result.data.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-400">Tidak ada data assignment.</td></tr>';
           return;
         }
 
-        rows.forEach(row => {
+        result.data.forEach(row => {
           const tr = document.createElement('tr');
           tr.className = 'border-b border-slate-100 hover:bg-slate-50';
           tr.innerHTML = `
@@ -575,24 +588,52 @@
           `;
           tbody.appendChild(tr);
         });
-      }).getAssignments(petugas, sls);
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-red-500">Gagal memuat data dari server.</td></tr>';
+      }
     }
 
-    function saveProgresEdit(rowIndex) {
+    async function saveProgresEdit(rowIndex) {
       const jenis = document.getElementById('jenis_' + rowIndex).value;
       const ket = document.getElementById('ket_' + rowIndex).value;
-      google.script.run.withSuccessHandler(msg => {
-        alert(msg);
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: new URLSearchParams({
+            action: 'updateAssignment',
+            rowIndex: rowIndex,
+            jenisTindakan: jenis,
+            keterangan: ket
+          })
+        });
+        const result = await response.json();
+        alert(result.message || "Data berhasil diperbarui!");
         loadProgresTable();
-      }).updateAssignment(rowIndex, jenis, ket);
+      } catch (err) {
+        alert("Gagal mengupdate data.");
+      }
     }
 
-    function deleteProgresRow(rowIndex) {
+    async function deleteProgresRow(rowIndex) {
       if (confirm("Apakah Anda yakin ingin menghapus baris data ini?")) {
-        google.script.run.withSuccessHandler(msg => {
-          alert(msg || "Data berhasil dihapus");
+        try {
+          const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body: new URLSearchParams({
+              action: 'deleteAssignment',
+              rowIndex: rowIndex
+            })
+          });
+          const result = await response.json();
+          alert(result.message || "Data berhasil dihapus!");
           loadProgresTable();
-        }).deleteAssignment(rowIndex);
+        } catch (err) {
+          alert("Gagal menghapus data.");
+        }
       }
     }
 
