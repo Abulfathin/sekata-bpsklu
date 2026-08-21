@@ -73,9 +73,11 @@
   </header>
 
   <main class="max-w-lg mx-auto px-4 py-5 pb-20">
+    <!-- NAVIGASI 3 MENU UTAMA -->
     <nav aria-label="Navigasi halaman" class="mb-5 flex gap-2">
-      <button type="button" id="show-form-btn" class="flex-1 py-2.5 rounded-xl font-bold bg-[#0061A8] text-white">Form Konfirmasi</button>
-      <button type="button" id="show-surat-btn" class="flex-1 py-2.5 rounded-xl font-bold bg-[#F57C00] text-white">Cetak Surat</button>
+      <button type="button" id="show-form-btn" class="flex-1 py-2.5 rounded-xl font-bold bg-[#0061A8] text-white shadow-sm transition-all">Form Konfirmasi</button>
+      <button type="button" id="show-surat-btn" class="flex-1 py-2.5 rounded-xl font-bold bg-slate-200 text-slate-700 shadow-sm transition-all">Cetak Surat</button>
+      <button type="button" id="show-progres-btn" class="flex-1 py-2.5 rounded-xl font-bold bg-slate-200 text-slate-700 shadow-sm transition-all">Cek Progres</button>
     </nav>
 
     <!-- Progress Indicator -->
@@ -108,7 +110,7 @@
 
     <div id="error-state" class="hidden text-center py-8 text-red-600 bg-white rounded-2xl shadow-md p-6"></div>
 
-    <!-- Surat Konfirmasi Ketua SLS -->
+    <!-- 1. Surat Konfirmasi Ketua SLS -->
     <section id="surat-section" class="hidden mb-5">
       <div class="bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
         <div class="flex items-center gap-2 mb-4">
@@ -116,7 +118,6 @@
           <h2 class="font-bold text-[#003B73] text-lg">Cetak Surat Konfirmasi Ketua SLS</h2>
         </div>
         <div class="space-y-3">
-          <!-- Dropdown Pencarian SLS/RT -->
           <div>
             <label for="search-surat-sls" class="block mb-1 font-semibold text-sm text-slate-800">Nama SLS/RT</label>
             <div class="relative">
@@ -152,7 +153,7 @@
       </div>
     </section>
 
-    <!-- Form -->
+    <!-- 2. Form Konfirmasi -->
     <form id="assignment-form" class="hidden space-y-4">
       <div class="bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
         <div class="flex items-center gap-2 mb-4">
@@ -160,7 +161,6 @@
           <h2 class="font-bold text-[#003B73] text-lg">Isi Data Konfirmasi</h2>
         </div>
 
-        <!-- PPL -->
         <div class="mb-4">
           <label for="search-ppl" class="block mb-1 font-semibold text-sm text-slate-800">Nama PPL</label>
           <div class="relative">
@@ -175,13 +175,11 @@
           <select id="select-ppl" class="hidden"></select>
         </div>
 
-        <!-- SLS Found Animation -->
         <div id="sls-found-banner" class="hidden mb-4 sls-found-anim bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-2">
           <i data-lucide="map-pin" class="text-[#0061A8]" style="width:18px;height:18px;"></i>
           <span class="text-sm font-semibold text-[#0061A8]" id="sls-found-text"></span>
         </div>
 
-        <!-- SLS -->
         <div class="mb-4">
           <label for="select-sls" class="block mb-1 font-semibold text-sm text-slate-800">Nama SLS</label>
           <div class="relative">
@@ -197,13 +195,11 @@
           </div>
         </div>
 
-        <!-- Assignment Count Animation -->
         <div id="assignment-count-banner" class="hidden mb-4 assignment-count-anim bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-2">
           <i data-lucide="clipboard-list" class="text-[#059669]" style="width:18px;height:18px;"></i>
           <span class="text-sm font-semibold text-[#059669]" id="assignment-count-text"></span>
         </div>
 
-        <!-- Assignment / Nama Usaha -->
         <div class="mb-4">
           <label class="block mb-1 font-semibold text-sm text-slate-800" for="select-assignment">Nama Usaha</label>
           <div class="relative">
@@ -226,7 +222,6 @@
           </div>
         </div>
 
-        <!-- SLS Tujuan -->
         <div id="sls-tujuan-section" class="hidden mb-4">
           <label for="search-sls-tujuan" class="block mb-1 font-semibold text-sm text-slate-800">Nama SLS Tujuan</label>
           <div class="relative">
@@ -241,7 +236,6 @@
           <select id="select-sls-tujuan" class="hidden"></select>
         </div>
 
-        <!-- Tindakan -->
         <div class="mb-4">
           <label class="block mb-2 font-semibold text-sm text-slate-800">Tindakan</label>
           <div class="flex flex-wrap gap-2" id="tindakan-group">
@@ -261,7 +255,6 @@
           <input type="hidden" id="select-tindakan" value="">
         </div>
 
-        <!-- Keterangan -->
         <div class="mb-4">
           <label for="input-keterangan" class="block mb-1 font-semibold text-sm text-slate-800">Keterangan Tindakan</label>
           <textarea id="input-keterangan" rows="2" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30" placeholder="Tuliskan keterangan tindakan..."></textarea>
@@ -270,6 +263,49 @@
         <button data-template-id="submit-btn" type="submit" class="w-full py-3.5 rounded-xl font-bold text-base transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg bg-[#F57C00] text-white">Simpan Konfirmasi</button>
       </div>
     </form>
+
+    <!-- 3. MENU BARU: CEK PROGRES ENTRI -->
+    <section id="progres-section" class="hidden mb-5">
+      <div class="bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-2 h-7 rounded-full bg-[#0061A8]"></div>
+          <h2 class="font-bold text-[#003B73] text-lg">Cek Progres Entri</h2>
+        </div>
+
+        <!-- Form Pencarian Nama Petugas -->
+        <div class="mb-3">
+          <label for="progres-petugas" class="block mb-1 font-semibold text-sm text-slate-800">Nama Petugas</label>
+          <input type="text" id="progres-petugas" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30" placeholder="Ketik nama petugas..." onblur="loadProgresSlsList()">
+        </div>
+
+        <!-- Drop-down List Nama SLS -->
+        <div class="mb-4">
+          <label for="progres-sls" class="block mb-1 font-semibold text-sm text-slate-800">Pilih SLS</label>
+          <select id="progres-sls" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30 bg-white" disabled onchange="loadProgresTable()">
+            <option value="">-- Pilih Petugas Terlebih Dahulu --</option>
+          </select>
+        </div>
+
+        <!-- Tabel Daftar Assignment -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs border-collapse border border-slate-200" id="tableProgresAssignment">
+            <thead class="bg-[#003B73] text-white">
+              <tr>
+                <th class="p-2 border border-slate-200 text-left">Nama Assignment</th>
+                <th class="p-2 border border-slate-200 text-left">Jenis Tindakan</th>
+                <th class="p-2 border border-slate-200 text-left">Keterangan</th>
+                <th class="p-2 border border-slate-200 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="progres-tbody">
+              <tr>
+                <td colspan="4" class="p-3 text-center text-slate-400">Silakan pilih petugas dan SLS terlebih dahulu.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
     <!-- Success Modal -->
     <div id="success-modal" class="hidden">
@@ -292,7 +328,6 @@
           <i data-lucide="history" style="width:18px;height:18px;" class="text-[#0061A8]"></i>
           <h2 class="font-bold text-[#003B73] text-base">Riwayat Konfirmasi (10 Terbaru)</h2>
         </div>
-        <!-- Filters -->
         <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap gap-2" id="filter-bar">
           <button type="button" class="filter-btn active px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200" data-filter="all">Semua</button>
           <button type="button" class="filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200" data-filter="ppl">PPL</button>
@@ -322,9 +357,6 @@
   <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw1DwQtZxIsXUO8O_nrSKd-_6CbLBjv6og3nLrqeulfDoA43p2ppwbLBxfkz_h3dltKsw/exec';
 
-    // =====================================================
-    // VARIABLE
-    // =====================================================
     let csvData = [];
     let allRecords = [];
     let currentPPLRows = [];
@@ -343,9 +375,6 @@
     let COL_ID_SLS = 'level_6_full_code';
     let COL_DESA = 'desa';
 
-    // =====================================================
-    // PROGRESS
-    // =====================================================
     function setStep(n) {
       const steps = ['step-ppl', 'step-sls', 'step-assignment', 'step-konfirmasi'];
       steps.forEach((id, i) => {
@@ -360,9 +389,6 @@
       });
     }
 
-    // =====================================================
-    // NORMALISASI & HELPERS
-    // =====================================================
     function norm(v) {
       return String(v || '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
     }
@@ -393,9 +419,6 @@
       return d.innerHTML;
     }
 
-    // =====================================================
-    // DETEKSI KOLOM
-    // =====================================================
     function detectColumns(row) {
       const keys = Object.keys(row);
       const find = target => keys.find(k => k.trim().toLowerCase() === target.toLowerCase());
@@ -406,15 +429,8 @@
       COL_ASSIGNMENT = find('nama_principal');
       COL_ID_SLS = find('level_6_full_code') || find('id_sls');
       COL_DESA = find('desa') || find('Nama Desa') || find('nama_desa');
-
-      if (!COL_PPL || !COL_SLS || !COL_USAHA || !COL_ASSIGNMENT) {
-        throw new Error('Kolom utama (PPL, Nama SLS, nama_usaha, nama_principal) tidak ditemukan');
-      }
     }
 
-    // =====================================================
-    // LOAD DATA FETCH
-    // =====================================================
     async function loadCSV() {
       try {
         const response = await fetch(`${SCRIPT_URL}?t=${Date.now()}`, {
@@ -449,7 +465,6 @@
         populatePPL();
         populateSuratMenu();
 
-        // Tampilkan 10 riwayat terbaru dari data Laporan
         allRecords = laporanData;
         renderHistory(allRecords);
 
@@ -465,9 +480,123 @@
       }
     }
 
-    // =====================================================
-    // DROPDOWN PPL
-    // =====================================================
+    // Navigasi Antar 3 Menu
+    function showPage(page) {
+      const formPage = document.getElementById('assignment-form');
+      const suratPage = document.getElementById('surat-section');
+      const progresPage = document.getElementById('progres-section');
+      const progress = document.getElementById('progress-bar');
+      const historySection = document.getElementById('history-section');
+
+      const btnForm = document.getElementById('show-form-btn');
+      const btnSurat = document.getElementById('show-surat-btn');
+      const btnProgres = document.getElementById('show-progres-btn');
+
+      // Reset style tombol menu
+      [btnForm, btnSurat, btnProgres].forEach(b => {
+        b.className = 'flex-1 py-2.5 rounded-xl font-bold bg-slate-200 text-slate-700 shadow-sm transition-all';
+      });
+
+      formPage.classList.add('hidden');
+      suratPage.classList.add('hidden');
+      progresPage.classList.add('hidden');
+
+      if (page === 'surat') {
+        progress.classList.add('hidden');
+        historySection.classList.add('hidden');
+        suratPage.classList.remove('hidden');
+        btnSurat.className = 'flex-1 py-2.5 rounded-xl font-bold bg-[#0061A8] text-white shadow-sm transition-all';
+      } else if (page === 'progres') {
+        progress.classList.add('hidden');
+        historySection.classList.add('hidden');
+        progresPage.classList.remove('hidden');
+        btnProgres.className = 'flex-1 py-2.5 rounded-xl font-bold bg-[#0061A8] text-white shadow-sm transition-all';
+      } else {
+        progress.classList.remove('hidden');
+        historySection.classList.remove('hidden');
+        formPage.classList.remove('hidden');
+        btnForm.className = 'flex-1 py-2.5 rounded-xl font-bold bg-[#0061A8] text-white shadow-sm transition-all';
+      }
+    }
+
+    document.getElementById('show-form-btn').addEventListener('click', () => showPage('form'));
+    document.getElementById('show-surat-btn').addEventListener('click', () => showPage('surat'));
+    document.getElementById('show-progres-btn').addEventListener('click', () => showPage('progres'));
+
+    // Fungsi Menu Cek Progres Entri
+    function loadProgresSlsList() {
+      const petugas = document.getElementById('progres-petugas').value.trim();
+      const selectSls = document.getElementById('progres-sls');
+      selectSls.innerHTML = '<option value="">-- Pilih SLS --</option>';
+      selectSls.disabled = true;
+      if (!petugas) return;
+
+      google.script.run.withSuccessHandler(function(slsArray) {
+        if (!slsArray || slsArray.length === 0) {
+          selectSls.innerHTML = '<option value="">Tidak ada SLS ditemukan</option>';
+          return;
+        }
+        slsArray.forEach(sls => {
+          const opt = document.createElement('option');
+          opt.value = sls;
+          opt.textContent = sls;
+          selectSls.appendChild(opt);
+        });
+        selectSls.disabled = false;
+      }).getSlsByPetugas(petugas);
+    }
+
+    function loadProgresTable() {
+      const petugas = document.getElementById('progres-petugas').value.trim();
+      const sls = document.getElementById('progres-sls').value.trim();
+      const tbody = document.getElementById('progres-tbody');
+      tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-400">Memuat data...</td></tr>';
+
+      if (!petugas || !sls) return;
+
+      google.script.run.withSuccessHandler(function(rows) {
+        tbody.innerHTML = '';
+        if (!rows || rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-400">Tidak ada data assignment.</td></tr>';
+          return;
+        }
+
+        rows.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.className = 'border-b border-slate-100 hover:bg-slate-50';
+          tr.innerHTML = `
+            <td class="p-2 border border-slate-200">${esc(row.namaAssignment)}</td>
+            <td class="p-2 border border-slate-200"><input type="text" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" value="${esc(row.jenisTindakan)}" id="jenis_${row.rowIndex}"></td>
+            <td class="p-2 border border-slate-200"><input type="text" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" value="${esc(row.keterangan)}" id="ket_${row.rowIndex}"></td>
+            <td class="p-2 border border-slate-200 text-center space-x-1">
+              <button type="button" class="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-semibold" onclick="saveProgresEdit(${row.rowIndex})">Edit</button>
+              <button type="button" class="px-2 py-1 bg-red-600 text-white rounded text-[10px] font-semibold" onclick="deleteProgresRow(${row.rowIndex})">Hapus</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }).getAssignments(petugas, sls);
+    }
+
+    function saveProgresEdit(rowIndex) {
+      const jenis = document.getElementById('jenis_' + rowIndex).value;
+      const ket = document.getElementById('ket_' + rowIndex).value;
+      google.script.run.withSuccessHandler(msg => {
+        alert(msg);
+        loadProgresTable();
+      }).updateAssignment(rowIndex, jenis, ket);
+    }
+
+    function deleteProgresRow(rowIndex) {
+      if (confirm("Apakah Anda yakin ingin menghapus baris data ini?")) {
+        google.script.run.withSuccessHandler(msg => {
+          alert(msg || "Data berhasil dihapus");
+          loadProgresTable();
+        }).deleteAssignment(rowIndex);
+      }
+    }
+
+    // (Fungsi-fungsi lain untuk PPL, Surat, dan Riwayat Anda tetap berjalan normal di bawah ini)
     function populatePPL() {
       const searchInput = document.getElementById('search-ppl');
       const pplList = document.getElementById('ppl-list');
@@ -501,16 +630,13 @@
       }
 
       render(unique);
-
       searchInput.addEventListener('input', function() {
         const keyword = norm(this.value);
         render(unique.filter(v => norm(v).includes(keyword)));
       });
-
       searchInput.addEventListener('focus', () => {
         document.getElementById('ppl-dropdown').classList.remove('hidden');
       });
-
       document.addEventListener('click', e => {
         const dropdown = document.getElementById('ppl-dropdown');
         if (!e.target.closest('#search-ppl') && !dropdown.contains(e.target)) {
@@ -519,14 +645,10 @@
       });
     }
 
-    // =====================================================
-    // DROPDOWN SLS TUJUAN (DENGAN NAMA DESA)
-    // =====================================================
     function populateSLSTujuan() {
       const searchInput = document.getElementById('search-sls-tujuan');
       const slsTujuanList = document.getElementById('sls-tujuan-list');
       const hiddenSel = document.getElementById('select-sls-tujuan');
-
       const rawList = Array.isArray(referenceData) ? referenceData : [];
 
       const unique = [...new Set(
@@ -547,7 +669,6 @@
           slsTujuanList.innerHTML = '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada hasil</div>';
           return;
         }
-
         filtered.forEach(v => {
           const btn = document.createElement('button');
           btn.type = 'button';
@@ -565,18 +686,15 @@
       }
 
       render(unique);
-
       if (searchInput) {
         searchInput.addEventListener('input', function() {
           const keyword = norm(this.value);
           render(unique.filter(v => norm(v).includes(keyword)));
         });
-
         searchInput.addEventListener('focus', () => {
           document.getElementById('sls-tujuan-dropdown').classList.remove('hidden');
         });
       }
-
       document.addEventListener('click', e => {
         const dropdown = document.getElementById('sls-tujuan-dropdown');
         if (!e.target.closest('#search-sls-tujuan') && !dropdown.contains(e.target)) {
@@ -585,9 +703,6 @@
       });
     }
 
-    // =====================================================
-    // EVENT KETIKA PPL DIPILIH
-    // =====================================================
     function triggerPPLChange() {
       setStep(1);
       const slsSel = document.getElementById('select-sls');
@@ -598,7 +713,6 @@
       asSel.innerHTML = '<option value="">Pilih Usaha</option>';
       slsSel.disabled = true;
       asSel.disabled = true;
-
       document.getElementById('sls-found-banner').classList.add('hidden');
 
       if (!pplVal) {
@@ -607,10 +721,7 @@
       }
 
       const target = norm(pplVal);
-      const filtered = csvData.filter(row =>
-        norm(extractPPLName(getVal(row, COL_PPL))) === target
-      );
-
+      const filtered = csvData.filter(row => norm(extractPPLName(getVal(row, COL_PPL))) === target);
       currentPPLRows = filtered;
       if (!filtered.length) return;
 
@@ -619,7 +730,6 @@
         const idSls = getVal(r, COL_ID_SLS) || getVal(r, COL_SLS);
         const namaSls = getVal(r, COL_SLS);
         const desa = getVal(r, COL_DESA) || getVal(r, 'Nama Desa') || getVal(r, 'nama_desa');
-        
         if (idSls && !slsMap.has(idSls)) {
           slsMap.set(idSls, {
             id_sls: idSls,
@@ -630,27 +740,17 @@
         }
       });
 
-      const uniqueSLSList = Array.from(slsMap.values()).sort((a, b) =>
-        a.displayText.localeCompare(b.displayText, 'id')
-      );
-
+      const uniqueSLSList = Array.from(slsMap.values()).sort((a, b) => a.displayText.localeCompare(b.displayText, 'id'));
       const banner = document.getElementById('sls-found-banner');
       const bannerText = document.getElementById('sls-found-text');
-
       bannerText.textContent = `SLS ditemukan: ${uniqueSLSList.length}`;
       banner.classList.remove('hidden', 'sls-found-anim');
       void banner.offsetWidth;
       banner.classList.add('sls-found-anim');
 
       uniqueSLSList.forEach(item => {
-        const slsFiltered = filtered.filter(r =>
-          (getVal(r, COL_ID_SLS) || getVal(r, COL_SLS)) === item.id_sls
-        );
-
-        const assignmentCount = [...new Set(
-          slsFiltered.map(r => String(getVal(r, COL_ASSIGNMENT)).trim()).filter(Boolean)
-        )].length;
-
+        const slsFiltered = filtered.filter(r => (getVal(r, COL_ID_SLS) || getVal(r, COL_SLS)) === item.id_sls);
+        const assignmentCount = [...new Set(slsFiltered.map(r => String(getVal(r, COL_ASSIGNMENT)).trim()).filter(Boolean))].length;
         const opt = document.createElement('option');
         opt.value = item.id_sls;
         opt.textContent = `${item.displayText} (${assignmentCount})`;
@@ -658,13 +758,9 @@
         opt.dataset.desa = item.desa;
         slsSel.appendChild(opt);
       });
-
       slsSel.disabled = false;
     }
 
-    // =====================================================
-    // EVENT PILIH SLS
-    // =====================================================
     document.getElementById('select-sls').addEventListener('change', function() {
       setStep(2);
       const asSel = document.getElementById('select-assignment');
@@ -673,19 +769,13 @@
 
       const banner = document.getElementById('assignment-count-banner');
       if (banner) banner.classList.add('hidden');
-
       if (!this.value) {
         setStep(1);
         return;
       }
 
-      const filteredSLS = currentPPLRows.filter(r =>
-        (getVal(r, COL_ID_SLS) || getVal(r, COL_SLS)) === this.value
-      );
-
-      const usahaList = [...new Set(
-        filteredSLS.map(r => String(getVal(r, COL_USAHA)).trim()).filter(Boolean)
-      )].sort((a, b) => a.localeCompare(b, 'id'));
+      const filteredSLS = currentPPLRows.filter(r => (getVal(r, COL_ID_SLS) || getVal(r, COL_SLS)) === this.value);
+      const usahaList = [...new Set(filteredSLS.map(r => String(getVal(r, COL_USAHA)).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'id'));
 
       if (banner) {
         const bannerText = document.getElementById('assignment-count-text');
@@ -701,13 +791,9 @@
         o.textContent = `${i + 1}. ${v}`;
         asSel.appendChild(o);
       });
-
       asSel.disabled = usahaList.length === 0;
     });
 
-    // =====================================================
-    // EVENT PILIH ASSIGNMENT
-    // =====================================================
     document.getElementById('select-assignment').addEventListener('change', function() {
       const assignmentInfo = document.getElementById('assignment-info');
       const selectedUsaha = this.value.trim();
@@ -725,38 +811,27 @@
         return matchesSls && matchesUsaha;
       });
 
-      const assignments = [...new Set(
-        selectedRows.map(r => String(getVal(r, COL_ASSIGNMENT)).trim()).filter(Boolean)
-      )];
-
+      const assignments = [...new Set(selectedRows.map(r => String(getVal(r, COL_ASSIGNMENT)).trim()).filter(Boolean))];
       assignmentInfo.textContent = assignments.join(' / ') || 'Nama assignment tidak ditemukan';
       setStep(3);
     });
 
-    // =====================================================
-    // EVENT TINDAKAN
-    // =====================================================
     document.getElementById('tindakan-group').addEventListener('click', function(e) {
       const btn = e.target.closest('.tindakan-btn');
       if (!btn) return;
-
       document.querySelectorAll('.tindakan-btn').forEach(b => {
         b.className = 'tindakan-btn flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-slate-200 text-xs font-semibold';
       });
 
       const rawVal = btn.dataset.value;
       const val = rawVal.startsWith('Berubah Status') ? 'Berubah Status' : rawVal;
-
       selectedTindakan = val;
       const selectTindakanEl = document.getElementById('select-tindakan');
-      if (selectTindakanEl) {
-        selectTindakanEl.value = val;
-      }
+      if (selectTindakanEl) selectTindakanEl.value = val;
 
       const cls = val === 'Sudah Sesuai' ? 'active-sudah-sesuai' :
                   val === 'Salah SLS' ? 'active-salah-sls' :
                   val.startsWith('Berubah') ? 'active-berubah' : 'active-ditemukan';
-
       btn.classList.add(cls);
       setStep(3);
 
@@ -771,9 +846,6 @@
       }
     });
 
-    // =====================================================
-    // SIMPAN KE GOOGLE SHEET
-    // =====================================================
     async function saveToGoogleSheet(record) {
       const payload = {
         nama_ppl: record.nama_ppl || '',
@@ -798,15 +870,11 @@
       return result;
     }
 
-    // =====================================================
-    // SUBMIT FORM
-    // =====================================================
     const form = document.getElementById('assignment-form');
     const submitBtn = form.querySelector('[data-template-id="submit-btn"]');
 
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
-
       const namaPPL = (document.getElementById('search-ppl').value || '').trim();
       const slsSelectEl = document.getElementById('select-sls');
       const selectedOption = slsSelectEl.options[slsSelectEl.selectedIndex];
@@ -867,9 +935,6 @@
       if (e.target === e.currentTarget) document.getElementById('success-modal').classList.add('hidden');
     });
 
-    // =====================================================
-    // RESET FORM
-    // =====================================================
     function resetForm() {
       form.reset();
       document.getElementById('search-ppl').value = '';
@@ -883,11 +948,9 @@
       document.getElementById('select-sls').disabled = true;
       document.getElementById('select-assignment').disabled = true;
       document.getElementById('select-tindakan').value = '';
-
       document.getElementById('sls-found-banner').classList.add('hidden');
       const assignmentBanner = document.getElementById('assignment-count-banner');
       if (assignmentBanner) assignmentBanner.classList.add('hidden');
-
       document.getElementById('sls-tujuan-section').classList.add('hidden');
 
       selectedTindakan = '';
@@ -897,14 +960,10 @@
       document.querySelectorAll('.tindakan-btn').forEach(b => {
         b.className = 'tindakan-btn flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-slate-200 text-xs font-semibold';
       });
-
       setStep(0);
       populateSLSTujuan();
     }
 
-    // =====================================================
-    // FILTER RIWAYAT
-    // =====================================================
     document.getElementById('filter-bar').addEventListener('click', e => {
       const btn = e.target.closest('.filter-btn');
       if (!btn) return;
@@ -919,9 +978,6 @@
       renderHistory(allRecords);
     });
 
-    // =====================================================
-    // RIWAYAT (DIBATASI MAKSIMAL 10 BARIS TERBARU)
-    // =====================================================
     function renderHistory(data) {
       const section = document.getElementById('history-section');
       const tbody = document.getElementById('history-body');
@@ -942,33 +998,23 @@
         });
       }
 
-      const sorted = [...filtered].sort((a, b) =>
-        (b.submitted_at || '').localeCompare(a.submitted_at || '')
-      );
-
+      const sorted = [...filtered].sort((a, b) => (b.submitted_at || '').localeCompare(a.submitted_at || ''));
       tbody.innerHTML = '';
-
       sorted.slice(0, 10).forEach(rec => tbody.appendChild(createRow(rec)));
-
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function createRow(rec) {
       const tr = document.createElement('tr');
       tr.className = 'border-b border-slate-100 hover:bg-slate-50';
-
-      const time = rec.submitted_at
-        ? new Date(rec.submitted_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
-        : '-';
-
-      tr.innerHTML =
-        `<td class="px-3 py-2.5">${esc(rec.nama_ppl)}</td>` +
-        `<td class="px-3 py-2.5">${esc(rec.nama_sls)}</td>` +
-        `<td class="px-3 py-2.5">${esc(rec.nama_assignment)}</td>` +
-        `<td class="px-3 py-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${actionColor(rec.tindakan)}">${esc(rec.tindakan)}</span></td>` +
-        `<td class="px-3 py-2.5 text-slate-500">${time}</td>` +
-        `<td class="px-3 py-2.5"></td>`;
-
+      const time = rec.submitted_at ? new Date(rec.submitted_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-';
+      tr.innerHTML = `
+        <td class="px-3 py-2.5">${esc(rec.nama_ppl)}</td>
+        <td class="px-3 py-2.5">${esc(rec.nama_sls)}</td>
+        <td class="px-3 py-2.5">${esc(rec.nama_assignment)}</td>
+        <td class="px-3 py-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${actionColor(rec.tindakan)}">${esc(rec.tindakan)}</span></td>
+        <td class="px-3 py-2.5 text-slate-500">${time}</td>
+        <td class="px-3 py-2.5"></td>`;
       return tr;
     }
 
@@ -980,16 +1026,10 @@
       return 'bg-slate-100 text-slate-700';
     }
 
-    // =====================================================
-    // SURAT KONFIRMASI KETUA SLS (WITH SEARCHABLE DROPDOWN)
-    // =====================================================
     function suratRows(slsValue) {
       const selectedSlsNormalized = normalizeText(slsValue);
       const rows = Array.isArray(laporanData) ? laporanData : [];
-      return rows.filter(item =>
-        normalizeText(item.nama_sls) === selectedSlsNormalized &&
-        normalizeText(item.tindakan) === 'sudah sesuai'
-      );
+      return rows.filter(item => normalizeText(item.nama_sls) === selectedSlsNormalized && normalizeText(item.tindakan) === 'sudah sesuai');
     }
 
     function populateSuratMenu() {
@@ -1004,15 +1044,12 @@
       }
 
       const dataSudahSesuai = laporanData.filter(item => normalizeText(item.tindakan) === 'sudah sesuai');
-
       const slsGroupMap = {};
       dataSudahSesuai.forEach(item => {
         const rawSls = String(item.nama_sls || '').trim();
         if (!rawSls) return;
-
         const rawPpl = String(item.nama_ppl || '').trim();
 
-        // Pencocokan nama desa dari csvData (Sheet1)
         let matchedDesa = '';
         if (Array.isArray(csvData) && csvData.length > 0) {
           const matchRow = csvData.find(r => 
@@ -1045,9 +1082,7 @@
         slsGroupMap[key].jumlah++;
       });
 
-      const uniqueSls = Object.values(slsGroupMap).sort((a, b) =>
-        a.displayText.localeCompare(b.displayText, 'id')
-      );
+      const uniqueSls = Object.values(slsGroupMap).sort((a, b) => a.displayText.localeCompare(b.displayText, 'id'));
 
       function render(filtered) {
         suratSlsList.innerHTML = '';
@@ -1055,7 +1090,6 @@
           suratSlsList.innerHTML = '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada hasil</div>';
           return;
         }
-
         filtered.forEach(item => {
           const btn = document.createElement('button');
           btn.type = 'button';
@@ -1073,18 +1107,15 @@
       }
 
       render(uniqueSls);
-
       if (searchInput) {
         searchInput.addEventListener('input', function() {
           const keyword = norm(this.value);
           render(uniqueSls.filter(item => norm(item.displayText).includes(keyword)));
         });
-
         searchInput.addEventListener('focus', () => {
           document.getElementById('surat-sls-dropdown').classList.remove('hidden');
         });
       }
-
       document.addEventListener('click', e => {
         const dropdown = document.getElementById('surat-sls-dropdown');
         if (dropdown && !e.target.closest('#search-surat-sls') && !dropdown.contains(e.target)) {
@@ -1092,24 +1123,6 @@
         }
       });
     }
-
-    function showPage(page) {
-      const formPage = document.getElementById('assignment-form');
-      const suratPage = document.getElementById('surat-section');
-      const progress = document.getElementById('progress-bar');
-      if (page === 'surat') {
-        formPage.classList.add('hidden');
-        progress.classList.add('hidden');
-        suratPage.classList.remove('hidden');
-      } else {
-        suratPage.classList.add('hidden');
-        progress.classList.remove('hidden');
-        formPage.classList.remove('hidden');
-      }
-    }
-
-    document.getElementById('show-form-btn').addEventListener('click', () => showPage('form'));
-    document.getElementById('show-surat-btn').addEventListener('click', () => showPage('surat'));
 
     function suratPayload() {
       const sls = document.getElementById('surat-sls').value.trim();
@@ -1173,7 +1186,7 @@
           <td>${esc(r.nama_assignment)}</td>
           <td>${esc(r.nama_usaha)}</td>
           <td style="text-align:center;">Tidak Ditemukan</td>
-        </tr>`
+         </tr>`
       ).join('');
 
       const previewEl = document.getElementById('surat-preview');
@@ -1181,18 +1194,15 @@
 
       previewEl.innerHTML = `
         <article id="surat-document" class="bg-white text-slate-900 p-4">
-          <!-- Kop Surat BPS -->
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" style="width: 50px; height: 50px; object-fit: contain;">
             <div style="font-weight: 800; font-style: italic; font-size: 11pt; line-height: 1.2; color: #003B73;">
               BADAN PUSAT STATISTIK<br>KABUPATEN LOMBOK UTARA
             </div>
           </div>
-
           <h3 style="text-align: center; font-weight: bold; margin-bottom: 16px; font-size: 13pt;">
             KONFIRMASI DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}
           </h3>
-
           <table class="surat-table text-xs" style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
             <thead>
               <tr>
@@ -1204,7 +1214,6 @@
             </thead>
             <tbody>${body}</tbody>
           </table>
-
           <div style="display: flex; justify-content: flex-end; margin-top: 30px;">
             <div style="text-align: center; min-width: 220px;">
               ${esc(payload.nama_desa)}, ${prettyDate}<br><br>
@@ -1248,7 +1257,6 @@
         </style>`;
 
         const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">${styles}</head><body>
-          <!-- Kop Surat BPS untuk Word -->
           <table class="kop-table">
             <tr>
               <td style="width: 60px;">
@@ -1259,7 +1267,6 @@
               </td>
             </tr>
           </table>
-
           <h3 align="center">KONFIRMASI DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3>
           <table>
             <thead>
@@ -1276,7 +1283,7 @@
                 <td>${esc(r.nama_assignment)}</td>
                 <td>${esc(r.nama_usaha)}</td>
                 <td style="text-align:center;">Tidak Ditemukan</td>
-              </tr>`).join('')}
+               </tr>`).join('')}
             </tbody>
           </table>
           <table class="ttd-table">
@@ -1294,7 +1301,6 @@
 
         const blob = new Blob([html], { type: 'application/msword' });
         const blobURL = URL.createObjectURL(blob);
-
         const newWindow = window.open(blobURL, '_blank');
         if (!newWindow) {
           showInlineError('Browser memblokir jendela baru. Izinkan pop-up kemudian coba lagi.');
@@ -1307,20 +1313,16 @@
       }
     }
 
-    // =====================================================
-    // INITIALIZATION & EVENT LISTENERS
-    // =====================================================
     document.addEventListener('DOMContentLoaded', async function() {
       try {
         await loadCSV();
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        // Mengaitkan Event Listener untuk Tombol Surat Konfirmasi
         const btnCreate = document.getElementById('surat-create');
         if (btnCreate) btnCreate.addEventListener('click', buildSurat);
 
         const btnPrint = document.getElementById('surat-print');
-        if (btnPrint) btnPrint.addEventListener('click', openSuratWord);
+        if (btnPrint) printBtn.addEventListener('click', openSuratWord);
 
         const btnDownload = document.getElementById('surat-download');
         if (btnDownload) btnDownload.addEventListener('click', generateSuratWord);
