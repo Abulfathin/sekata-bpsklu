@@ -1,370 +1,5688 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Konfirmasi & Progres Lapangan</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SweetAlert2 untuk Notifikasi Seragam -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>SEKATA - Konfirmasi Data SE2026</title>
+
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .header-bg {
+      background: linear-gradient(
+        135deg,
+        #003B73 0%,
+        #0061A8 50%,
+        #004E8C 100%
+      );
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-bg::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.15);
+    }
+
+    .header-bg::after {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      left: -30px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.1);
+    }
+
+    .tindakan-btn {
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .tindakan-btn.active-sudah-sesuai {
+      background: #DCFCE7;
+      border-color: #22C55E;
+      color: #166534;
+    }
+
+    .tindakan-btn.active-salah-sls {
+      background: #FEE2E2;
+      border-color: #EF4444;
+      color: #B91C1C;
+    }
+
+    .tindakan-btn.active-berubah {
+      background: #FEF3C7;
+      border-color: #F59E0B;
+      color: #92400E;
+    }
+
+    .tindakan-btn.active-ditemukan {
+      background: #DBEAFE;
+      border-color: #3B82F6;
+      color: #1E40AF;
+    }
+
+    /* Progress */
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+    }
+
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      border: 2px solid #cbd5e1;
+      color: #94a3b8;
+      background: #fff;
+      transition: all 0.3s;
+      z-index: 2;
+    }
+
+    .step-item.active .step-circle {
+      border-color: #0061A8;
+      background: #0061A8;
+      color: #fff;
+    }
+
+    .step-item.completed .step-circle {
+      border-color: #22C55E;
+      background: #22C55E;
+      color: #fff;
+    }
+
+    .step-label {
+      font-size: 11px;
+      margin-top: 4px;
+      color: #94a3b8;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .step-item.active .step-label {
+      color: #0061A8;
+    }
+
+    .step-item.completed .step-label {
+      color: #22C55E;
+    }
+
+    .step-connector {
+      position: absolute;
+      top: 15px;
+      left: calc(50% + 16px);
+      right: calc(-50% + 16px);
+      height: 2px;
+      background: #e2e8f0;
+      z-index: 1;
+    }
+
+    .step-item.completed .step-connector {
+      background: #22C55E;
+    }
+
+    .step-item.active .step-connector {
+      background: #0061A8;
+    }
+
+    /* Animations */
+    .sls-found-anim,
+    .assignment-count-anim {
+      animation: slideDown 0.4s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      animation: fadeIn 0.2s;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal-content {
+      animation: scaleIn 0.3s ease-out;
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .checkmark-circle {
+      animation: pop 0.4s ease-out 0.2s both;
+    }
+
+    @keyframes pop {
+      from {
+        transform: scale(0);
+      }
+
+      to {
+        transform: scale(1);
+      }
+    }
+
+    /* Surat */
+    .surat-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #000;
+    }
+
+    .surat-table th,
+    .surat-table td {
+      border: 1px solid #000;
+      padding: 6px 8px;
+      vertical-align: middle;
+    }
+
+    .surat-table th {
+      text-align: center;
+      font-weight: bold;
+    }
+
+    /* Filter */
+    .filter-btn {
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active {
+      background: #0061A8;
+      color: #fff;
+    }
+
+    /* Scrollbar */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 10px;
+    }
+
+    /* Print */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #surat-document,
+      #surat-document * {
+        visibility: visible;
+      }
+
+      #surat-document {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans antialiased">
 
-    <!-- Container Utama -->
-    <div class="max-w-4xl mx-auto p-4 sm:p-6">
-        
-        <!-- Header Aplikasi -->
-        <header class="bg-white shadow rounded-2xl p-6 mb-6 text-center">
-            <h1 class="text-2xl font-bold text-gray-900">Sistem Konfirmasi & Monitoring Lapangan</h1>
-            <p class="text-sm text-gray-500 mt-1">Kelola konfirmasi, cetak surat, dan pantau progres entri data dengan mudah.</p>
-        </header>
+<body class="min-h-screen bg-slate-50">
 
-        <!-- Navigasi Tab / Menu -->
-        <nav class="flex justify-center space-x-2 sm:space-x-4 mb-6">
-            <button onclick="switchTab('form')" id="btnTabForm" class="px-4 py-2 text-sm font-medium rounded-xl bg-blue-600 text-white shadow transition">Form Konfirmasi</button>
-            <button onclick="switchTab('surat')" id="btnTabSurat" class="px-4 py-2 text-sm font-medium rounded-xl bg-white text-gray-600 hover:bg-gray-100 shadow-sm transition">Cetak Surat</button>
-            <button onclick="switchTab('progres')" id="btnTabProgres" class="px-4 py-2 text-sm font-medium rounded-xl bg-white text-gray-600 hover:bg-gray-100 shadow-sm transition">Cek Progres</button>
-        </nav>
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
 
-        <!-- KONTEN MENU 1: FORM KONFIRMASI -->
-        <section id="contentForm" class="bg-white shadow rounded-2xl p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Form Konfirmasi Data</h2>
-            <form id="formKonfirmasi" onsubmit="submitFormKonfirmasi(event)" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Nama PPL</label>
-                    <input type="text" id="inputNamaPpl" required class="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Nama SLS</label>
-                    <input type="text" id="inputNamaSls" required class="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Nama Usaha / Keluarga</label>
-                    <input type="text" id="inputNamaUsaha" required class="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Tindakan</label>
-                    <select id="inputTindakan" class="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="Sesuai">Sesuai</option>
-                        <option value="Tidak Ditemukan">Tidak Ditemukan</option>
-                        <option value="Ganti Nama">Ganti Nama</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Keterangan</label>
-                    <textarea id="inputKeterangan" rows="3" class="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition">Simpan Konfirmasi</button>
-            </form>
-        </section>
+  <header class="header-bg w-full">
 
-        <!-- KONTEN MENU 2: CETAK SURAT -->
-        <section id="contentSurat" class="bg-white shadow rounded-2xl p-6 hidden">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Cetak Surat Konfirmasi (Word)</h2>
-            <p class="text-sm text-gray-500 mb-4">Fitur pembuatan dokumen surat konfirmasi otomatis berbasis data yang telah dientri.</p>
-        </section>
+    <div class="max-w-lg mx-auto px-4 py-6 text-center relative z-10">
 
-        <!-- KONTEN MENU 3: CEK PROGRES -->
-        <section id="contentProgres" class="bg-white shadow rounded-2xl p-6 hidden">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Cek Progres Entri Lapangan</h2>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Pilih Petugas / PPL</label>
-                    <select id="selectProgresPetugas" onchange="onPetugasChange()" class="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-sm">
-                        <option value="">-- Pilih Petugas --</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Pilih SLS</label>
-                    <select id="selectProgresSls" onchange="loadProgresTable()" class="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-sm">
-                        <option value="">-- Pilih SLS --</option>
-                    </select>
-                </div>
-            </div>
+      <div class="flex items-center justify-center gap-3 mb-2">
 
-            <!-- TABEL PROGRES (Disembunyikan secara default, baru muncul setelah data dipilih/dimuat) -->
-            <div id="tabelProgresContainer" class="overflow-x-auto mt-6 hidden">
-                <table class="min-w-full divide-y divide-gray-200 border">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">No</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Assignment</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Tindakan</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Keterangan</th>
-                            <th class="px-4 py-2 text-center text-xs font-medium text-gray-600 uppercase">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bodyTabelProgres" class="bg-white divide-y divide-gray-200 text-sm">
-                        <!-- Data dimasukkan secara dinamis via JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        <img
+          class="w-14 h-14 object-contain rounded-lg"
+          alt="Logo BPS"
+          src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg"
+        >
+
+        <div class="text-left leading-tight">
+
+          <h2 class="font-extrabold italic uppercase tracking-wide text-white text-base">
+            BADAN PUSAT STATISTIK
+          </h2>
+
+          <h2 class="font-extrabold italic uppercase tracking-wide text-white text-base">
+            KABUPATEN LOMBOK UTARA
+          </h2>
+
+        </div>
+
+      </div>
+
+      <h1 class="font-bold leading-tight text-white text-xl mt-3">
+        SENSUS EKONOMI KONFIRMASI DATA (SEKATA)
+      </h1>
+
+      <p class="mt-1 text-sm opacity-90 text-white">
+        Laporkan assignment yang tidak ditemukan di lapangan
+      </p>
 
     </div>
 
-    <!-- SCRIPT UTAMA FRONTEND -->
-    <script>
-        // Masukkan URL Deployment Google Apps Script Anda yang valid di bawah ini
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycb.../exec";
-        let globalLaporanData = [];
+  </header>
 
-        // Inisialisasi awal saat halaman dimuat
-        document.addEventListener("DOMContentLoaded", () => {
-            fetchInitialData();
+
+  <!-- =====================================================
+       MAIN
+  ====================================================== -->
+
+  <main class="max-w-lg mx-auto px-4 py-5 pb-20">
+
+    <!-- NAVIGASI -->
+
+    <nav
+      aria-label="Navigasi halaman"
+      class="mb-5 flex gap-2"
+    >
+
+      <button
+        type="button"
+        id="show-form-btn"
+        class="flex-1 py-2.5 rounded-xl font-bold bg-[#0061A8] text-white shadow-sm transition-all"
+      >
+        Form Konfirmasi
+      </button>
+
+      <button
+        type="button"
+        id="show-surat-btn"
+        class="flex-1 py-2.5 rounded-xl font-bold bg-slate-200 text-slate-700 shadow-sm transition-all"
+      >
+        Cetak Surat
+      </button>
+
+      <button
+        type="button"
+        id="show-progres-btn"
+        class="flex-1 py-2.5 rounded-xl font-bold bg-slate-200 text-slate-700 shadow-sm transition-all"
+      >
+        Cek Progres
+      </button>
+
+    </nav>
+
+
+    <!-- =====================================================
+         PROGRESS INDICATOR
+    ====================================================== -->
+
+    <div
+      class="flex items-start mb-5"
+      id="progress-bar"
+    >
+
+      <div
+        class="step-item active"
+        id="step-ppl"
+      >
+
+        <div class="step-circle">
+          1
+        </div>
+
+        <span class="step-label">
+          PPL
+        </span>
+
+        <div class="step-connector"></div>
+
+      </div>
+
+
+      <div
+        class="step-item"
+        id="step-sls"
+      >
+
+        <div class="step-circle">
+          2
+        </div>
+
+        <span class="step-label">
+          SLS
+        </span>
+
+        <div class="step-connector"></div>
+
+      </div>
+
+
+      <div
+        class="step-item"
+        id="step-assignment"
+      >
+
+        <div class="step-circle">
+          3
+        </div>
+
+        <span class="step-label">
+          Assignment
+        </span>
+
+        <div class="step-connector"></div>
+
+      </div>
+
+
+      <div
+        class="step-item"
+        id="step-konfirmasi"
+      >
+
+        <div class="step-circle">
+          4
+        </div>
+
+        <span class="step-label">
+          Konfirmasi
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <!-- LOADING -->
+
+    <div
+      id="loading-state"
+      class="text-center py-8 text-slate-500"
+    >
+
+      <i
+        data-lucide="loader"
+        class="animate-spin inline-block mb-2"
+        style="width:24px;height:24px;"
+      ></i>
+
+      <p>
+        Memuat data assignment...
+      </p>
+
+    </div>
+
+
+    <!-- ERROR -->
+
+    <div
+      id="error-state"
+      class="hidden text-center py-8 text-red-600 bg-white rounded-2xl shadow-md p-6"
+    ></div>
+
+
+    <!-- =====================================================
+         SURAT KONFIRMASI
+    ====================================================== -->
+
+    <section
+      id="surat-section"
+      class="hidden mb-5"
+    >
+
+      <div class="bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+
+        <div class="flex items-center gap-2 mb-4">
+
+          <div class="w-2 h-7 rounded-full bg-[#0061A8]"></div>
+
+          <h2 class="font-bold text-[#003B73] text-lg">
+            Cetak Surat Konfirmasi Ketua SLS
+          </h2>
+
+        </div>
+
+
+        <!-- SLS -->
+
+        <div class="space-y-3">
+
+          <div>
+
+            <label
+              for="search-surat-sls"
+              class="block mb-1 font-semibold text-sm text-slate-800"
+            >
+              Nama SLS/RT
+            </label>
+
+            <div class="relative">
+
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#0061A8]">
+
+                <i
+                  data-lucide="map-pin"
+                  style="width:18px;height:18px;"
+                ></i>
+
+              </span>
+
+
+              <input
+                id="search-surat-sls"
+                type="text"
+                placeholder="Ketik nama SLS/RT..."
+                autocomplete="off"
+                class="w-full border-2 border-[#0061A8] rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:ring-2 focus:ring-[#0061A8]/30 bg-blue-50/30"
+              >
+
+
+              <div
+                id="surat-sls-dropdown"
+                class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto custom-scroll"
+              >
+
+                <div
+                  class="p-2"
+                  id="surat-sls-list"
+                ></div>
+
+              </div>
+
+            </div>
+
+
+            <input
+              type="hidden"
+              id="surat-sls"
+              value=""
+            >
+
+          </div>
+
+
+          <!-- DESA -->
+
+          <div>
+
+            <label
+              for="surat-desa"
+              class="block mb-1 font-semibold text-sm text-slate-800"
+            >
+              Nama Desa
+            </label>
+
+            <input
+              id="surat-desa"
+              type="text"
+              readonly
+              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm bg-slate-50"
+            >
+
+          </div>
+
+
+          <!-- TANGGAL -->
+
+          <div>
+
+            <label
+              for="surat-tanggal"
+              class="block mb-1 font-semibold text-sm text-slate-800"
+            >
+              Tanggal TTD
+            </label>
+
+            <input
+              id="surat-tanggal"
+              type="date"
+              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm"
+            >
+
+          </div>
+
+
+          <!-- KETUA -->
+
+          <div>
+
+            <label
+              for="surat-ketua"
+              class="block mb-1 font-semibold text-sm text-slate-800"
+            >
+              Nama Ketua RT
+            </label>
+
+            <input
+              id="surat-ketua"
+              type="text"
+              placeholder="Masukkan nama ketua RT..."
+              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm"
+            >
+
+          </div>
+
+
+          <button
+            id="surat-create"
+            type="button"
+            class="w-full py-3 rounded-xl font-bold bg-[#0061A8] text-white"
+          >
+            Buat Surat Konfirmasi
+          </button>
+
+        </div>
+
+
+        <!-- PREVIEW -->
+
+        <div
+          id="surat-preview"
+          class="hidden mt-5 border-t pt-5"
+        ></div>
+
+
+        <!-- ACTION -->
+
+        <div
+          id="surat-actions"
+          class="hidden mt-4 flex gap-2"
+        >
+
+          <button
+            id="surat-download"
+            type="button"
+            class="flex-1 py-3 rounded-xl font-bold bg-[#F57C00] text-white"
+          >
+            Download Word
+          </button>
+
+          <button
+            id="surat-print"
+            type="button"
+            class="flex-1 py-3 rounded-xl font-bold bg-[#0061A8] text-white"
+          >
+            Cetak
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         FORM KONFIRMASI
+    ====================================================== -->
+
+    <form
+      id="assignment-form"
+      class="hidden space-y-4"
+    >
+
+      <div class="bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+
+        <div class="flex items-center gap-2 mb-4">
+
+          <div class="w-2 h-7 rounded-full bg-[#F57C00]"></div>
+
+          <h2 class="font-bold text-[#003B73] text-lg">
+            Isi Data Konfirmasi
+          </h2>
+
+        </div>
+
+
+        <!-- PPL -->
+
+        <div class="mb-4">
+
+          <label
+            for="search-ppl"
+            class="block mb-1 font-semibold text-sm text-slate-800"
+          >
+            Nama PPL
+          </label>
+
+          <div class="relative">
+
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#0061A8]">
+
+              <i
+                data-lucide="search"
+                style="width:18px;height:18px;"
+              ></i>
+
+            </span>
+
+
+            <input
+              id="search-ppl"
+              type="text"
+              placeholder="Ketik nama PPL..."
+              autocomplete="off"
+              class="w-full border-2 border-[#0061A8] rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:ring-2 focus:ring-[#0061A8]/30 bg-blue-50/30"
+            >
+
+
+            <div
+              id="ppl-dropdown"
+              class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto custom-scroll"
+            >
+
+              <div
+                class="p-2"
+                id="ppl-list"
+              ></div>
+
+            </div>
+
+          </div>
+
+
+          <select
+            id="select-ppl"
+            class="hidden"
+          ></select>
+
+        </div>
+
+
+        <!-- SLS FOUND -->
+
+        <div
+          id="sls-found-banner"
+          class="hidden mb-4 sls-found-anim bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-2"
+        >
+
+          <i
+            data-lucide="map-pin"
+            class="text-[#0061A8]"
+            style="width:18px;height:18px;"
+          ></i>
+
+          <span
+            class="text-sm font-semibold text-[#0061A8]"
+            id="sls-found-text"
+          ></span>
+
+        </div>
+
+
+        <!-- SLS -->
+
+        <div class="mb-4">
+
+          <label
+            for="select-sls"
+            class="block mb-1 font-semibold text-sm text-slate-800"
+          >
+            Nama SLS
+          </label>
+
+          <div class="relative">
+
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+
+              <i
+                data-lucide="map-pin"
+                style="width:18px;height:18px;"
+              ></i>
+
+            </span>
+
+
+            <select
+              id="select-sls"
+              required
+              disabled
+              class="w-full border border-slate-300 rounded-xl pl-10 pr-10 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30 appearance-none bg-white"
+            >
+
+              <option value="">
+                -- Pilih SLS --
+              </option>
+
+            </select>
+
+
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+
+              <i
+                data-lucide="chevron-down"
+                style="width:16px;height:16px;"
+              ></i>
+
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- ASSIGNMENT COUNT -->
+
+        <div
+          id="assignment-count-banner"
+          class="hidden mb-4 assignment-count-anim bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-2"
+        >
+
+          <i
+            data-lucide="clipboard-list"
+            class="text-[#059669]"
+            style="width:18px;height:18px;"
+          ></i>
+
+          <span
+            class="text-sm font-semibold text-[#059669]"
+            id="assignment-count-text"
+          ></span>
+
+        </div>
+
+
+        <!-- USAHA -->
+
+        <div class="mb-4">
+
+          <label
+            for="select-assignment"
+            class="block mb-1 font-semibold text-sm text-slate-800"
+          >
+            Nama Usaha
+          </label>
+
+          <div class="relative">
+
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+
+              <i
+                data-lucide="building-2"
+                style="width:18px;height:18px;"
+              ></i>
+
+            </span>
+
+
+            <select
+              id="select-assignment"
+              required
+              disabled
+              class="w-full border border-slate-300 rounded-xl pl-10 pr-10 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30 appearance-none bg-white"
+            >
+
+              <option value="">
+                Pilih Usaha
+              </option>
+
+            </select>
+
+
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+
+              <i
+                data-lucide="chevron-down"
+                style="width:16px;height:16px;"
+              ></i>
+
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- ASSIGNMENT INFO -->
+
+        <div class="mb-4">
+
+          <label class="block mb-1 font-semibold text-sm text-slate-800">
+            Nama Assignment
+          </label>
+
+          <div
+            id="assignment-info"
+            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
+          >
+            Nama assignment akan muncul di sini
+          </div>
+
+        </div>
+
+
+        <!-- SLS TUJUAN -->
+
+        <div
+          id="sls-tujuan-section"
+          class="hidden mb-4"
+        >
+
+          <label
+            for="search-sls-tujuan"
+            class="block mb-1 font-semibold text-sm text-slate-800"
+          >
+            Nama SLS Tujuan
+          </label>
+
+          <div class="relative">
+
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#0061A8]">
+
+              <i
+                data-lucide="map-pin"
+                style="width:18px;height:18px;"
+              ></i>
+
+            </span>
+
+
+            <input
+              id="search-sls-tujuan"
+              type="text"
+              placeholder="Ketik nama SLS Tujuan..."
+              autocomplete="off"
+              class="w-full border-2 border-[#0061A8] rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:ring-2 focus:ring-[#0061A8]/30 bg-blue-50/30"
+            >
+
+
+            <div
+              id="sls-tujuan-dropdown"
+              class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto custom-scroll"
+            >
+
+              <div
+                class="p-2"
+                id="sls-tujuan-list"
+              ></div>
+
+            </div>
+
+          </div>
+
+
+          <select
+            id="select-sls-tujuan"
+            class="hidden"
+          ></select>
+
+        </div>
+
+
+        <!-- TINDAKAN -->
+
+        <div class="mb-4">
+
+          <label class="block mb-2 font-semibold text-sm text-slate-800">
+            Tindakan
+          </label>
+
+
+          <div
+            class="flex flex-wrap gap-2"
+            id="tindakan-group"
+          >
+
+            <button
+              type="button"
+              class="tindakan-btn flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-slate-200 text-xs font-semibold"
+              data-value="Sudah Sesuai"
+            >
+
+              <i
+                data-lucide="check-circle"
+                style="width:14px;height:14px;"
+              ></i>
+
+              Sudah Sesuai
+
+            </button>
+
+
+            <button
+              type="button"
+              class="tindakan-btn flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-slate-200 text-xs font-semibold"
+              data-value="Salah SLS"
+            >
+
+              <i
+                data-lucide="alert-circle"
+                style="width:14px;height:14px;"
+              ></i>
+
+              Salah SLS
+
+            </button>
+
+
+            <button
+              type="button"
+              class="tindakan-btn flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-slate-200 text-xs font-semibold"
+              data-value="Berubah Status"
+            >
+
+              <i
+                data-lucide="refresh-cw"
+                style="width:14px;height:14px;"
+              ></i>
+
+              Berubah Status
+
+            </button>
+
+
+            <button
+              type="button"
+              class="tindakan-btn flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-slate-200 text-xs font-semibold"
+              data-value="Ditemukan"
+            >
+
+              <i
+                data-lucide="check"
+                style="width:14px;height:14px;"
+              ></i>
+
+              Ditemukan
+
+            </button>
+
+          </div>
+
+
+          <input
+            type="hidden"
+            id="select-tindakan"
+            value=""
+          >
+
+        </div>
+
+
+        <!-- KETERANGAN -->
+
+        <div class="mb-4">
+
+          <label
+            for="input-keterangan"
+            class="block mb-1 font-semibold text-sm text-slate-800"
+          >
+            Keterangan Tindakan
+          </label>
+
+          <textarea
+            id="input-keterangan"
+            rows="2"
+            class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30"
+            placeholder="Tuliskan keterangan tindakan..."
+          ></textarea>
+
+        </div>
+
+
+        <!-- SUBMIT -->
+
+        <button
+          type="submit"
+          id="submit-btn"
+          class="w-full py-3.5 rounded-xl font-bold text-base transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg bg-[#F57C00] text-white"
+        >
+          Simpan Konfirmasi
+        </button>
+
+      </div>
+
+    </form>
+
+
+    <!-- =====================================================
+         CEK PROGRES
+    ====================================================== -->
+
+    <section
+      id="progres-section"
+      class="hidden mb-5"
+    >
+
+      <div class="bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+
+        <div class="flex items-center gap-2 mb-4">
+
+          <div class="w-2 h-7 rounded-full bg-[#0061A8]"></div>
+
+          <h2 class="font-bold text-[#003B73] text-lg">
+            Cek Progres Entri
+          </h2>
+
+        </div>
+
+
+        <!-- PETUGAS -->
+
+        <div class="mb-3 relative">
+
+          <label
+            for="progres-petugas"
+            class="block mb-1 font-semibold text-sm text-slate-800"
+          >
+            Nama Petugas
+          </label>
+
+          <div class="relative">
+
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#0061A8]">
+
+              <i
+                data-lucide="search"
+                style="width:18px;height:18px;"
+              ></i>
+
+            </span>
+
+
+            <input
+              type="text"
+              id="progres-petugas"
+              placeholder="Ketik atau pilih nama petugas..."
+              autocomplete="off"
+              class="w-full border-2 border-[#0061A8] rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:ring-2 focus:ring-[#0061A8]/30 bg-blue-50/30"
+            >
+
+
+            <div
+              id="progres-petugas-dropdown"
+              class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 max-h-48 overflow-y-auto custom-scroll"
+            >
+
+              <div
+                class="p-2"
+                id="progres-petugas-list"
+              ></div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- SLS -->
+
+        <div class="mb-4">
+
+          <label
+            for="progres-sls"
+            class="block mb-1 font-semibold text-sm text-slate-800"
+          >
+            Pilih SLS
+          </label>
+
+
+          <select
+            id="progres-sls"
+            class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30 bg-white"
+            disabled
+          >
+
+            <option value="">
+              -- Pilih Petugas Terlebih Dahulu --
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- TABLE -->
+
+        <div class="overflow-x-auto">
+
+          <table
+            class="w-full text-xs border-collapse border border-slate-200"
+            id="tableProgresAssignment"
+          >
+
+            <thead class="bg-[#003B73] text-white">
+
+              <tr>
+
+                <th class="p-2 border border-slate-200 text-left">
+                  Nama Assignment
+                </th>
+
+                <th class="p-2 border border-slate-200 text-left">
+                  Jenis Tindakan
+                </th>
+
+                <th class="p-2 border border-slate-200 text-left">
+                  Keterangan
+                </th>
+
+                <th class="p-2 border border-slate-200 text-center">
+                  Aksi
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody id="progres-tbody">
+
+              <tr>
+
+                <td
+                  colspan="4"
+                  class="p-3 text-center text-slate-400"
+                >
+                  Silakan pilih petugas dan SLS terlebih dahulu.
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         HISTORY
+    ====================================================== -->
+
+    <section
+      id="history-section"
+      class="mt-6 hidden"
+    >
+
+      <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
+
+          <i
+            data-lucide="history"
+            style="width:18px;height:18px;"
+            class="text-[#0061A8]"
+          ></i>
+
+          <h2 class="font-bold text-[#003B73] text-base">
+            Riwayat Konfirmasi
+          </h2>
+
+        </div>
+
+
+        <!-- FILTER -->
+
+        <div
+          class="px-5 py-3 border-b border-slate-100 flex flex-wrap gap-2"
+          id="filter-bar"
+        >
+
+          <button
+            type="button"
+            class="filter-btn active px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200"
+            data-filter="all"
+          >
+            Semua
+          </button>
+
+          <button
+            type="button"
+            class="filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200"
+            data-filter="ppl"
+          >
+            PPL
+          </button>
+
+          <button
+            type="button"
+            class="filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200"
+            data-filter="sls"
+          >
+            SLS
+          </button>
+
+          <button
+            type="button"
+            class="filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200"
+            data-filter="tindakan"
+          >
+            Tindakan
+          </button>
+
+
+          <input
+            type="text"
+            id="filter-search"
+            class="ml-auto border border-slate-200 rounded-full px-3 py-1.5 text-xs w-32 focus:ring-1 focus:ring-[#0061A8]"
+            placeholder="Cari..."
+          >
+
+        </div>
+
+
+        <!-- TABLE -->
+
+        <div class="overflow-x-auto">
+
+          <table class="w-full text-xs">
+
+            <thead class="bg-[#003B73] text-white">
+
+              <tr>
+
+                <th class="px-3 py-2.5 text-left font-semibold">
+                  PPL
+                </th>
+
+                <th class="px-3 py-2.5 text-left font-semibold">
+                  SLS
+                </th>
+
+                <th class="px-3 py-2.5 text-left font-semibold">
+                  Assignment
+                </th>
+
+                <th class="px-3 py-2.5 text-left font-semibold">
+                  Tindakan
+                </th>
+
+                <th class="px-3 py-2.5 text-left font-semibold">
+                  Waktu
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody id="history-body"></tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         SUCCESS MODAL
+    ====================================================== -->
+
+    <div
+      id="success-modal"
+      class="hidden"
+    >
+
+      <div
+        class="modal-overlay"
+        id="modal-overlay"
+      >
+
+        <div class="modal-content bg-white rounded-2xl p-8 text-center max-w-xs mx-4 shadow-2xl">
+
+          <div class="checkmark-circle w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+
+            <i
+              data-lucide="check"
+              class="text-green-600"
+              style="width:32px;height:32px;"
+            ></i>
+
+          </div>
+
+
+          <h3 class="font-bold text-lg mb-1 text-slate-900">
+            Konfirmasi berhasil disimpan
+          </h3>
+
+
+          <p class="text-sm text-slate-500 mb-5">
+            Data telah tersimpan dengan sukses.
+          </p>
+
+
+          <button
+            type="button"
+            id="modal-close-btn"
+            class="w-full py-2.5 rounded-xl font-semibold text-sm bg-[#0061A8] text-white"
+          >
+            Tutup
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <!-- =====================================================
+       JAVASCRIPT
+  ====================================================== -->
+
+  <script>
+
+    /* =====================================================
+       CONFIGURATION
+    ====================================================== */
+
+    const SCRIPT_URL =
+      'https://script.google.com/macros/s/AKfycbw1DwQtZxIsXUO8O_nrSKd-_6CbLBjv6og3nLrqeulfDoA43p2ppwbLBxfkz_h3dltKsw/exec';
+
+
+    /* =====================================================
+       GLOBAL VARIABLES
+    ====================================================== */
+
+    let csvData = [];
+    let allRecords = [];
+    let currentPPLRows = [];
+
+    let selectedTindakan = '';
+    let selectedSLSTujuan = '';
+
+    let activeFilter = 'all';
+    let filterQuery = '';
+
+    let referenceData = [];
+    let laporanData = [];
+    let laporanResponse = null;
+
+
+    /* Nama kolom */
+
+    let COL_PPL = 'PPL';
+    let COL_SLS = 'Nama SLS';
+    let COL_USAHA = 'nama_usaha';
+    let COL_ASSIGNMENT = 'nama_principal';
+    let COL_ID_SLS = 'level_6_full_code';
+    let COL_DESA = 'desa';
+
+
+    /* =====================================================
+       UTILITY
+    ====================================================== */
+
+    function norm(value) {
+
+      return String(value || '')
+        .replace(/\u00A0/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+
+    }
+
+
+    function normalizeText(value) {
+
+      return String(value ?? '')
+        .replace(/\u00A0/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+
+    }
+
+
+    function getVal(row, col) {
+
+      if (!row || !col) {
+        return '';
+      }
+
+      const key = Object.keys(row).find(
+        k =>
+          String(k).trim().toLowerCase() ===
+          String(col).trim().toLowerCase()
+      );
+
+      return key ? row[key] : '';
+
+    }
+
+
+    function esc(value) {
+
+      const div = document.createElement('div');
+
+      div.textContent = value == null ? '' : String(value);
+
+      return div.innerHTML;
+
+    }
+
+
+    function extractPPLName(raw) {
+
+      if (!raw) {
+        return '';
+      }
+
+      raw = String(raw).trim();
+
+      if (raw.includes(' - ')) {
+        return raw.split(' - ')[0].trim();
+      }
+
+      const parts = raw.split(/\s{2,}/);
+
+      return parts.length > 1
+        ? parts[0].trim()
+        : raw;
+
+    }
+
+
+    /* =====================================================
+       DETECT COLUMN
+    ====================================================== */
+
+    function detectColumns(row) {
+
+      if (!row) {
+        return;
+      }
+
+      const keys = Object.keys(row);
+
+      const find = target =>
+        keys.find(
+          k =>
+            String(k).trim().toLowerCase() ===
+            target.toLowerCase()
+        );
+
+
+      COL_PPL =
+        find('PPL') ||
+        find('nama_ppl') ||
+        'PPL';
+
+
+      COL_SLS =
+        find('Nama SLS') ||
+        find('nama_sls') ||
+        'Nama SLS';
+
+
+      COL_USAHA =
+        find('nama_usaha') ||
+        find('Nama Usaha') ||
+        'nama_usaha';
+
+
+      COL_ASSIGNMENT =
+        find('nama_principal') ||
+        find('nama_assignment') ||
+        'nama_principal';
+
+
+      COL_ID_SLS =
+        find('level_6_full_code') ||
+        find('id_sls') ||
+        find('ID SLS') ||
+        'level_6_full_code';
+
+
+      COL_DESA =
+        find('desa') ||
+        find('Nama Desa') ||
+        find('nama_desa') ||
+        'desa';
+
+    }
+
+
+    /* =====================================================
+       PROGRESS STEP
+    ====================================================== */
+
+    function setStep(number) {
+
+      const steps = [
+        'step-ppl',
+        'step-sls',
+        'step-assignment',
+        'step-konfirmasi'
+      ];
+
+
+      steps.forEach((id, index) => {
+
+        const element =
+          document.getElementById(id);
+
+        if (!element) {
+          return;
+        }
+
+        element.classList.remove(
+          'active',
+          'completed'
+        );
+
+
+        if (index < number) {
+
+          element.classList.add('completed');
+
+        } else if (index === number) {
+
+          element.classList.add('active');
+
+        }
+
+      });
+
+    }
+
+
+    /* =====================================================
+       LOAD DATA GOOGLE SHEET
+    ====================================================== */
+
+    async function loadCSV() {
+
+      try {
+
+        const response = await fetch(
+          `${SCRIPT_URL}?t=${Date.now()}`,
+          {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-store',
+            redirect: 'follow'
+          }
+        );
+
+
+        const responseText =
+          await response.text();
+
+
+        let json;
+
+        try {
+
+          json = JSON.parse(responseText);
+
+        } catch (error) {
+
+          console.error(
+            'Response Google Apps Script:',
+            responseText
+          );
+
+          throw new Error(
+            'Gagal memproses JSON dari Google Sheet.'
+          );
+
+        }
+
+
+        if (
+          !response.ok ||
+          !json ||
+          json.success !== true
+        ) {
+
+          throw new Error(
+            json?.message ||
+            'Gagal mengambil data dari Google Sheet.'
+          );
+
+        }
+
+
+        laporanResponse = json;
+
+
+        csvData =
+          Array.isArray(json.data)
+            ? json.data
+            : [];
+
+
+        laporanData =
+          Array.isArray(json.laporanData)
+            ? json.laporanData
+            : [];
+
+
+        referenceData =
+          Array.isArray(json.reference)
+            ? json.reference
+            : [];
+
+
+        if (csvData.length > 0) {
+
+          detectColumns(csvData[0]);
+
+        }
+
+
+        /* Populate semua menu */
+
+        populateSLSTujuan();
+
+        populatePPL();
+
+        populateSuratMenu();
+
+        populateProgresPetugas();
+
+
+        /* Riwayat */
+
+        allRecords = laporanData;
+
+        renderHistory(allRecords);
+
+
+        /* Loading selesai */
+
+        document
+          .getElementById('loading-state')
+          .classList.add('hidden');
+
+
+        document
+          .getElementById('assignment-form')
+          .classList.remove('hidden');
+
+
+        if (
+          typeof lucide !== 'undefined'
+        ) {
+
+          lucide.createIcons();
+
+        }
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        document
+          .getElementById('loading-state')
+          .classList.add('hidden');
+
+
+        const errorElement =
+          document.getElementById('error-state');
+
+
+        errorElement.textContent =
+          'Error: ' + error.message;
+
+
+        errorElement.classList.remove('hidden');
+
+      }
+
+    }
+
+
+    /* =====================================================
+       NAVIGATION
+    ====================================================== */
+
+    function showPage(page) {
+
+      const formPage =
+        document.getElementById('assignment-form');
+
+      const suratPage =
+        document.getElementById('surat-section');
+
+      const progresPage =
+        document.getElementById('progres-section');
+
+      const progress =
+        document.getElementById('progress-bar');
+
+      const history =
+        document.getElementById('history-section');
+
+
+      const btnForm =
+        document.getElementById('show-form-btn');
+
+      const btnSurat =
+        document.getElementById('show-surat-btn');
+
+      const btnProgres =
+        document.getElementById('show-progres-btn');
+
+
+      [btnForm, btnSurat, btnProgres]
+        .forEach(button => {
+
+          button.className =
+            'flex-1 py-2.5 rounded-xl font-bold bg-slate-200 text-slate-700 shadow-sm transition-all';
+
         });
 
-        // Navigasi Tab
-        function switchTab(tabName) {
-            document.getElementById('contentForm').classList.add('hidden');
-            document.getElementById('contentSurat').classList.add('hidden');
-            document.getElementById('contentProgres').classList.add('hidden');
-            
-            document.getElementById('btnTabForm').className = "px-4 py-2 text-sm font-medium rounded-xl bg-white text-gray-600 hover:bg-gray-100 shadow-sm transition";
-            document.getElementById('btnTabSurat').className = "px-4 py-2 text-sm font-medium rounded-xl bg-white text-gray-600 hover:bg-gray-100 shadow-sm transition";
-            document.getElementById('btnTabProgres').className = "px-4 py-2 text-sm font-medium rounded-xl bg-white text-gray-600 hover:bg-gray-100 shadow-sm transition";
 
-            if (tabName === 'form') {
-                document.getElementById('contentForm').classList.remove('hidden');
-                document.getElementById('btnTabForm').className = "px-4 py-2 text-sm font-medium rounded-xl bg-blue-600 text-white shadow transition";
-            } else if (tabName === 'surat') {
-                document.getElementById('contentSurat').classList.remove('hidden');
-                document.getElementById('btnTabSurat').className = "px-4 py-2 text-sm font-medium rounded-xl bg-blue-600 text-white shadow transition";
-            } else if (tabName === 'progres') {
-                document.getElementById('contentProgres').classList.remove('hidden');
-                document.getElementById('btnTabProgres').className = "px-4 py-2 text-sm font-medium rounded-xl bg-blue-600 text-white shadow transition";
-            }
+      formPage.classList.add('hidden');
+      suratPage.classList.add('hidden');
+      progresPage.classList.add('hidden');
+
+
+      if (page === 'surat') {
+
+        progress.classList.add('hidden');
+        history.classList.add('hidden');
+
+        suratPage.classList.remove('hidden');
+
+        btnSurat.className =
+          'flex-1 py-2.5 rounded-xl font-bold bg-[#0061A8] text-white shadow-sm transition-all';
+
+
+      } else if (page === 'progres') {
+
+        progress.classList.add('hidden');
+        history.classList.add('hidden');
+
+        progresPage.classList.remove('hidden');
+
+        btnProgres.className =
+          'flex-1 py-2.5 rounded-xl font-bold bg-[#0061A8] text-white shadow-sm transition-all';
+
+
+      } else {
+
+        progress.classList.remove('hidden');
+        history.classList.remove('hidden');
+
+        formPage.classList.remove('hidden');
+
+        btnForm.className =
+          'flex-1 py-2.5 rounded-xl font-bold bg-[#0061A8] text-white shadow-sm transition-all';
+
+      }
+
+
+      if (
+        typeof lucide !== 'undefined'
+      ) {
+
+        lucide.createIcons();
+
+      }
+
+    }
+
+
+    /* =====================================================
+       PPL
+    ====================================================== */
+
+    function populatePPL() {
+
+      const searchInput =
+        document.getElementById('search-ppl');
+
+      const list =
+        document.getElementById('ppl-list');
+
+      const hiddenSelect =
+        document.getElementById('select-ppl');
+
+
+      const unique = [
+        ...new Set(
+          csvData
+            .map(row =>
+              extractPPLName(
+                getVal(row, COL_PPL)
+              )
+            )
+            .filter(Boolean)
+        )
+      ].sort(
+        (a, b) =>
+          a.localeCompare(b, 'id')
+      );
+
+
+      function render(filtered) {
+
+        list.innerHTML = '';
+
+
+        if (!filtered.length) {
+
+          list.innerHTML =
+            '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada hasil</div>';
+
+          return;
+
         }
 
-        // Ambil Data Inisialisasi dari Google Apps Script
-        function fetchInitialData() {
-            fetch(SCRIPT_URL)
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success) {
-                        globalLaporanData = res.laporanData || [];
-                        populateProgresPetugas();
-                    }
+
+        filtered.forEach(name => {
+
+          const button =
+            document.createElement('button');
+
+
+          button.type = 'button';
+
+
+          button.className =
+            'w-full text-left px-3 py-2.5 hover:bg-blue-50 rounded-lg text-sm font-medium';
+
+
+          button.textContent = name;
+
+
+          button.addEventListener(
+            'click',
+            event => {
+
+              event.preventDefault();
+
+              searchInput.value = name;
+
+              hiddenSelect.value = name;
+
+              document
+                .getElementById('ppl-dropdown')
+                .classList.add('hidden');
+
+
+              triggerPPLChange();
+
+            }
+          );
+
+
+          list.appendChild(button);
+
+        });
+
+      }
+
+
+      render(unique);
+
+
+      searchInput.addEventListener(
+        'input',
+        function() {
+
+          const keyword =
+            norm(this.value);
+
+          render(
+            unique.filter(
+              name =>
+                norm(name)
+                  .includes(keyword)
+            )
+          );
+
+        }
+      );
+
+
+      searchInput.addEventListener(
+        'focus',
+        () => {
+
+          document
+            .getElementById('ppl-dropdown')
+            .classList.remove('hidden');
+
+        }
+      );
+
+    }
+
+
+    /* =====================================================
+       PPL CHANGE
+    ====================================================== */
+
+    function triggerPPLChange() {
+
+      setStep(1);
+
+
+      const slsSelect =
+        document.getElementById('select-sls');
+
+      const assignmentSelect =
+        document.getElementById('select-assignment');
+
+
+      const ppl =
+        document
+          .getElementById('search-ppl')
+          .value
+          .trim();
+
+
+      slsSelect.innerHTML =
+        '<option value="">-- Pilih SLS --</option>';
+
+
+      assignmentSelect.innerHTML =
+        '<option value="">Pilih Usaha</option>';
+
+
+      slsSelect.disabled = true;
+      assignmentSelect.disabled = true;
+
+
+      document
+        .getElementById('sls-found-banner')
+        .classList.add('hidden');
+
+
+      if (!ppl) {
+
+        currentPPLRows = [];
+
+        setStep(0);
+
+        return;
+
+      }
+
+
+      const target =
+        norm(ppl);
+
+
+      const filtered =
+        csvData.filter(
+          row =>
+            norm(
+              extractPPLName(
+                getVal(row, COL_PPL)
+              )
+            ) === target
+        );
+
+
+      currentPPLRows = filtered;
+
+
+      if (!filtered.length) {
+
+        return;
+
+      }
+
+
+      const slsMap = new Map();
+
+
+      filtered.forEach(row => {
+
+        const idSls =
+          getVal(row, COL_ID_SLS) ||
+          getVal(row, COL_SLS);
+
+
+        const namaSls =
+          getVal(row, COL_SLS);
+
+
+        const desa =
+          getVal(row, COL_DESA) ||
+          getVal(row, 'Nama Desa') ||
+          getVal(row, 'nama_desa');
+
+
+        if (
+          idSls &&
+          !slsMap.has(idSls)
+        ) {
+
+          slsMap.set(
+            idSls,
+            {
+              id_sls: idSls,
+              nama_sls: namaSls,
+              desa: desa,
+              displayText:
+                desa
+                  ? `${namaSls} - DESA ${desa}`
+                  : namaSls
+            }
+          );
+
+        }
+
+      });
+
+
+      const uniqueSLSList =
+        Array.from(
+          slsMap.values()
+        ).sort(
+          (a, b) =>
+            a.displayText.localeCompare(
+              b.displayText,
+              'id'
+            )
+        );
+
+
+      const banner =
+        document.getElementById(
+          'sls-found-banner'
+        );
+
+
+      const bannerText =
+        document.getElementById(
+          'sls-found-text'
+        );
+
+
+      bannerText.textContent =
+        `SLS ditemukan: ${uniqueSLSList.length}`;
+
+
+      banner.classList.remove(
+        'hidden',
+        'sls-found-anim'
+      );
+
+
+      void banner.offsetWidth;
+
+
+      banner.classList.add(
+        'sls-found-anim'
+      );
+
+
+      uniqueSLSList.forEach(item => {
+
+        const rows =
+          filtered.filter(
+            row =>
+              (
+                getVal(
+                  row,
+                  COL_ID_SLS
+                ) ||
+                getVal(
+                  row,
+                  COL_SLS
+                )
+              ) === item.id_sls
+          );
+
+
+        const assignmentCount =
+          [
+            ...new Set(
+              rows
+                .map(
+                  row =>
+                    String(
+                      getVal(
+                        row,
+                        COL_ASSIGNMENT
+                      )
+                    ).trim()
+                )
+                .filter(Boolean)
+            )
+          ].length;
+
+
+        const option =
+          document.createElement('option');
+
+
+        option.value =
+          item.id_sls;
+
+
+        option.textContent =
+          `${item.displayText} (${assignmentCount})`;
+
+
+        option.dataset.namaSls =
+          item.nama_sls;
+
+
+        option.dataset.desa =
+          item.desa;
+
+
+        slsSelect.appendChild(
+          option
+        );
+
+      });
+
+
+      slsSelect.disabled = false;
+
+    }
+
+
+    /* =====================================================
+       SLS CHANGE
+    ====================================================== */
+
+    document
+      .getElementById('select-sls')
+      .addEventListener(
+        'change',
+        function() {
+
+          setStep(2);
+
+
+          const assignmentSelect =
+            document.getElementById(
+              'select-assignment'
+            );
+
+
+          assignmentSelect.innerHTML =
+            '<option value="">Pilih Usaha</option>';
+
+
+          assignmentSelect.disabled =
+            true;
+
+
+          const banner =
+            document.getElementById(
+              'assignment-count-banner'
+            );
+
+
+          banner.classList.add(
+            'hidden'
+          );
+
+
+          if (!this.value) {
+
+            setStep(1);
+
+            return;
+
+          }
+
+
+          const filtered =
+            currentPPLRows.filter(
+              row =>
+                (
+                  getVal(
+                    row,
+                    COL_ID_SLS
+                  ) ||
+                  getVal(
+                    row,
+                    COL_SLS
+                  )
+                ) === this.value
+            );
+
+
+          const usahaList =
+            [
+              ...new Set(
+                filtered
+                  .map(
+                    row =>
+                      String(
+                        getVal(
+                          row,
+                          COL_USAHA
+                        )
+                      ).trim()
+                  )
+                  .filter(Boolean)
+              )
+            ].sort(
+              (a, b) =>
+                a.localeCompare(
+                  b,
+                  'id'
+                )
+            );
+
+
+          document
+            .getElementById(
+              'assignment-count-text'
+            )
+            .textContent =
+            `Jumlah Usaha ditemukan: ${usahaList.length}`;
+
+
+          banner.classList.remove(
+            'hidden',
+            'assignment-count-anim'
+          );
+
+
+          void banner.offsetWidth;
+
+
+          banner.classList.add(
+            'assignment-count-anim'
+          );
+
+
+          usahaList.forEach(
+            (usaha, index) => {
+
+              const option =
+                document.createElement(
+                  'option'
+                );
+
+
+              option.value = usaha;
+
+
+              option.textContent =
+                `${index + 1}. ${usaha}`;
+
+
+              assignmentSelect.appendChild(
+                option
+              );
+
+            }
+          );
+
+
+          assignmentSelect.disabled =
+            usahaList.length === 0;
+
+        }
+      );
+
+
+    /* =====================================================
+       ASSIGNMENT CHANGE
+    ====================================================== */
+
+    document
+      .getElementById('select-assignment')
+      .addEventListener(
+        'change',
+        function() {
+
+          const info =
+            document.getElementById(
+              'assignment-info'
+            );
+
+
+          const usaha =
+            this.value.trim();
+
+
+          const sls =
+            document.getElementById(
+              'select-sls'
+            ).value;
+
+
+          if (!usaha) {
+
+            info.textContent =
+              'Nama assignment akan muncul di sini';
+
+            setStep(2);
+
+            return;
+
+          }
+
+
+          const rows =
+            currentPPLRows.filter(
+              row => {
+
+                const rowSls =
+                  getVal(
+                    row,
+                    COL_ID_SLS
+                  ) ||
+                  getVal(
+                    row,
+                    COL_SLS
+                  );
+
+
+                return (
+                  rowSls === sls &&
+                  norm(
+                    getVal(
+                      row,
+                      COL_USAHA
+                    )
+                  ) === norm(usaha)
+                );
+
+              }
+            );
+
+
+          const assignments =
+            [
+              ...new Set(
+                rows
+                  .map(
+                    row =>
+                      String(
+                        getVal(
+                          row,
+                          COL_ASSIGNMENT
+                        )
+                      ).trim()
+                  )
+                  .filter(Boolean)
+              )
+            ];
+
+
+          info.textContent =
+            assignments.join(' / ') ||
+            'Nama assignment tidak ditemukan';
+
+
+          setStep(3);
+
+        }
+      );
+
+
+    /* =====================================================
+       SLS TUJUAN
+    ====================================================== */
+
+    function populateSLSTujuan() {
+
+      const searchInput =
+        document.getElementById(
+          'search-sls-tujuan'
+        );
+
+
+      const list =
+        document.getElementById(
+          'sls-tujuan-list'
+        );
+
+
+      const hiddenSelect =
+        document.getElementById(
+          'select-sls-tujuan'
+        );
+
+
+      const unique =
+        [
+          ...new Set(
+            referenceData
+              .map(item => {
+
+                if (
+                  typeof item === 'object' &&
+                  item !== null
+                ) {
+
+                  const sls =
+                    String(
+                      item.Nama_SLS ||
+                      item.nama_sls ||
+                      item.nmsls ||
+                      item.label_lengkap ||
+                      ''
+                    ).trim();
+
+
+                  const desa =
+                    String(
+                      item.Nama_Desa ||
+                      item.nama_desa ||
+                      item.Desa ||
+                      item.desa ||
+                      ''
+                    ).trim();
+
+
+                  if (!sls) {
+                    return '';
+                  }
+
+
+                  return desa
+                    ? `${sls} - DESA ${desa}`
+                    : sls;
+
+                }
+
+
+                return String(
+                  item
+                ).trim();
+
+              })
+              .filter(Boolean)
+          )
+        ].sort(
+          (a, b) =>
+            a.localeCompare(
+              b,
+              'id'
+            )
+        );
+
+
+      function render(filtered) {
+
+        list.innerHTML = '';
+
+
+        if (!filtered.length) {
+
+          list.innerHTML =
+            '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada hasil</div>';
+
+          return;
+
+        }
+
+
+        filtered.forEach(value => {
+
+          const button =
+            document.createElement(
+              'button'
+            );
+
+
+          button.type = 'button';
+
+
+          button.className =
+            'w-full text-left px-3 py-2.5 hover:bg-blue-50 rounded-lg text-sm font-medium';
+
+
+          button.textContent =
+            value;
+
+
+          button.addEventListener(
+            'click',
+            event => {
+
+              event.preventDefault();
+
+
+              searchInput.value =
+                value;
+
+
+              hiddenSelect.value =
+                value;
+
+
+              selectedSLSTujuan =
+                value;
+
+
+              document
+                .getElementById(
+                  'sls-tujuan-dropdown'
+                )
+                .classList.add(
+                  'hidden'
+                );
+
+            }
+          );
+
+
+          list.appendChild(button);
+
+        });
+
+      }
+
+
+      render(unique);
+
+
+      searchInput.addEventListener(
+        'input',
+        function() {
+
+          const keyword =
+            norm(this.value);
+
+          selectedSLSTujuan = '';
+
+          hiddenSelect.value = '';
+
+          render(
+            unique.filter(
+              value =>
+                norm(value)
+                  .includes(keyword)
+            )
+          );
+
+        }
+      );
+
+
+      searchInput.addEventListener(
+        'focus',
+        () => {
+
+          document
+            .getElementById(
+              'sls-tujuan-dropdown'
+            )
+            .classList.remove(
+              'hidden'
+            );
+
+        }
+      );
+
+    }
+
+
+    /* =====================================================
+       TINDAKAN
+    ====================================================== */
+
+    document
+      .getElementById('tindakan-group')
+      .addEventListener(
+        'click',
+        function(event) {
+
+          const button =
+            event.target.closest(
+              '.tindakan-btn'
+            );
+
+
+          if (!button) {
+            return;
+          }
+
+
+          document
+            .querySelectorAll(
+              '.tindakan-btn'
+            )
+            .forEach(btn => {
+
+              btn.className =
+                'tindakan-btn flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-slate-200 text-xs font-semibold';
+
+            });
+
+
+          const value =
+            button.dataset.value;
+
+
+          selectedTindakan =
+            value;
+
+
+          document
+            .getElementById(
+              'select-tindakan'
+            )
+            .value =
+            value;
+
+
+          let activeClass =
+            'active-ditemukan';
+
+
+          if (
+            value ===
+            'Sudah Sesuai'
+          ) {
+
+            activeClass =
+              'active-sudah-sesuai';
+
+          } else if (
+            value ===
+            'Salah SLS'
+          ) {
+
+            activeClass =
+              'active-salah-sls';
+
+          } else if (
+            value ===
+            'Berubah Status'
+          ) {
+
+            activeClass =
+              'active-berubah';
+
+          }
+
+
+          button.classList.add(
+            activeClass
+          );
+
+
+          const section =
+            document.getElementById(
+              'sls-tujuan-section'
+            );
+
+
+          if (
+            value ===
+            'Salah SLS'
+          ) {
+
+            section.classList.remove(
+              'hidden'
+            );
+
+
+            selectedSLSTujuan = '';
+
+
+            document
+              .getElementById(
+                'search-sls-tujuan'
+              )
+              .value = '';
+
+
+          } else {
+
+            section.classList.add(
+              'hidden'
+            );
+
+
+            selectedSLSTujuan = '';
+
+
+            document
+              .getElementById(
+                'search-sls-tujuan'
+              )
+              .value = '';
+
+
+            document
+              .getElementById(
+                'select-sls-tujuan'
+              )
+              .value = '';
+
+          }
+
+
+          setStep(3);
+
+        }
+      );
+
+
+    /* =====================================================
+       SAVE TO GOOGLE SHEET
+    ====================================================== */
+
+    async function saveToGoogleSheet(record) {
+
+      const payload = {
+
+        nama_ppl:
+          record.nama_ppl || '',
+
+        nama_sls:
+          record.nama_sls || '',
+
+        nama_usaha:
+          record.nama_usaha || '',
+
+        nama_assignment:
+          record.nama_assignment || '',
+
+        sls_tujuan:
+          record.sls_tujuan || '',
+
+        tindakan:
+          record.tindakan || '',
+
+        keterangan:
+          record.keterangan || '',
+
+        submitted_at:
+          record.submitted_at ||
+          new Date().toISOString()
+
+      };
+
+
+      const response =
+        await fetch(
+          SCRIPT_URL,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body:
+              new URLSearchParams(
+                payload
+              )
+          }
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          'Gagal mengirim data ke Google Sheet.'
+        );
+
+      }
+
+
+      const result =
+        await response.json();
+
+
+      if (!result.success) {
+
+        throw new Error(
+          result.message ||
+          'Google Sheet gagal menyimpan data.'
+        );
+
+      }
+
+
+      return result;
+
+    }
+
+
+    /* =====================================================
+       SUBMIT FORM
+    ====================================================== */
+
+    document
+      .getElementById('assignment-form')
+      .addEventListener(
+        'submit',
+        async function(event) {
+
+          event.preventDefault();
+
+
+          const submitButton =
+            document.getElementById(
+              'submit-btn'
+            );
+
+
+          const namaPPL =
+            document
+              .getElementById(
+                'search-ppl'
+              )
+              .value
+              .trim();
+
+
+          const slsSelect =
+            document.getElementById(
+              'select-sls'
+            );
+
+
+          const selectedOption =
+            slsSelect.options[
+              slsSelect.selectedIndex
+            ];
+
+
+          const namaSLS =
+            selectedOption
+              ? (
+                  selectedOption.dataset.namaSls ||
+                  ''
+                ).trim()
+              : '';
+
+
+          const namaUsaha =
+            document
+              .getElementById(
+                'select-assignment'
+              )
+              .value
+              .trim();
+
+
+          const namaAssignment =
+            document
+              .getElementById(
+                'assignment-info'
+              )
+              .textContent
+              .trim();
+
+
+          const tindakan =
+            document
+              .getElementById(
+                'select-tindakan'
+              )
+              .value
+              .trim();
+
+
+          const keterangan =
+            document
+              .getElementById(
+                'input-keterangan'
+              )
+              .value
+              .trim();
+
+
+          /* Validasi */
+
+          if (!namaPPL) {
+
+            return showInlineError(
+              'PPL wajib dipilih'
+            );
+
+          }
+
+
+          if (!namaSLS) {
+
+            return showInlineError(
+              'SLS wajib dipilih'
+            );
+
+          }
+
+
+          if (!namaUsaha) {
+
+            return showInlineError(
+              'Nama Usaha wajib dipilih'
+            );
+
+          }
+
+
+          if (
+            !namaAssignment ||
+            namaAssignment ===
+              'Nama assignment akan muncul di sini'
+          ) {
+
+            return showInlineError(
+              'Nama Assignment tidak ditemukan'
+            );
+
+          }
+
+
+          if (!tindakan) {
+
+            return showInlineError(
+              'Tindakan wajib dipilih'
+            );
+
+          }
+
+
+          if (
+            tindakan ===
+              'Salah SLS' &&
+            !selectedSLSTujuan
+          ) {
+
+            return showInlineError(
+              'SLS Tujuan wajib dipilih'
+            );
+
+          }
+
+
+          const record = {
+
+            nama_ppl:
+              namaPPL,
+
+            nama_sls:
+              namaSLS,
+
+            nama_usaha:
+              namaUsaha,
+
+            nama_assignment:
+              namaAssignment,
+
+            sls_tujuan:
+              selectedSLSTujuan,
+
+            tindakan:
+              tindakan,
+
+            keterangan:
+              keterangan,
+
+            submitted_at:
+              new Date().toISOString()
+
+          };
+
+
+          submitButton.disabled =
+            true;
+
+
+          submitButton.textContent =
+            'Menyimpan...';
+
+
+          try {
+
+            await saveToGoogleSheet(
+              record
+            );
+
+
+            showSuccessModal();
+
+
+            resetForm();
+
+
+            /* Refresh riwayat */
+
+            await loadCSV();
+
+
+          } catch (error) {
+
+            console.error(error);
+
+
+            submitButton.textContent =
+              error.message ||
+              'Gagal, coba lagi';
+
+
+            setTimeout(
+              () => {
+
+                submitButton.textContent =
+                  'Simpan Konfirmasi';
+
+              },
+              2500
+            );
+
+          }
+
+
+          submitButton.disabled =
+            false;
+
+
+          if (
+            submitButton.textContent ===
+            'Menyimpan...'
+          ) {
+
+            submitButton.textContent =
+              'Simpan Konfirmasi';
+
+          }
+
+        }
+      );
+
+
+    function showInlineError(message) {
+
+      const button =
+        document.getElementById(
+          'submit-btn'
+        );
+
+
+      button.textContent =
+        message;
+
+
+      setTimeout(
+        () => {
+
+          button.textContent =
+            'Simpan Konfirmasi';
+
+        },
+        2500
+      );
+
+    }
+
+
+    /* =====================================================
+       SUCCESS MODAL
+    ====================================================== */
+
+    function showSuccessModal() {
+
+      document
+        .getElementById(
+          'success-modal'
+        )
+        .classList.remove(
+          'hidden'
+        );
+
+
+      if (
+        typeof lucide !==
+        'undefined'
+      ) {
+
+        lucide.createIcons();
+
+      }
+
+    }
+
+
+    document
+      .getElementById(
+        'modal-close-btn'
+      )
+      .addEventListener(
+        'click',
+        () => {
+
+          document
+            .getElementById(
+              'success-modal'
+            )
+            .classList.add(
+              'hidden'
+            );
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        'modal-overlay'
+      )
+      .addEventListener(
+        'click',
+        event => {
+
+          if (
+            event.target ===
+            event.currentTarget
+          ) {
+
+            document
+              .getElementById(
+                'success-modal'
+              )
+              .classList.add(
+                'hidden'
+              );
+
+          }
+
+        }
+      );
+
+
+    /* =====================================================
+       RESET FORM
+    ====================================================== */
+
+    function resetForm() {
+
+      document
+        .getElementById(
+          'assignment-form'
+        )
+        .reset();
+
+
+      document
+        .getElementById(
+          'search-ppl'
+        )
+        .value = '';
+
+
+      document
+        .getElementById(
+          'select-ppl'
+        )
+        .value = '';
+
+
+      document
+        .getElementById(
+          'select-sls'
+        )
+        .innerHTML =
+        '<option value="">-- Pilih SLS --</option>';
+
+
+      document
+        .getElementById(
+          'select-assignment'
+        )
+        .innerHTML =
+        '<option value="">Pilih Usaha</option>';
+
+
+      document
+        .getElementById(
+          'assignment-info'
+        )
+        .textContent =
+        'Nama assignment akan muncul di sini';
+
+
+      document
+        .getElementById(
+          'search-sls-tujuan'
+        )
+        .value = '';
+
+
+      document
+        .getElementById(
+          'select-sls-tujuan'
+        )
+        .value = '';
+
+
+      document
+        .getElementById(
+          'select-sls'
+        )
+        .disabled = true;
+
+
+      document
+        .getElementById(
+          'select-assignment'
+        )
+        .disabled = true;
+
+
+      document
+        .getElementById(
+          'sls-found-banner'
+        )
+        .classList.add(
+          'hidden'
+        );
+
+
+      document
+        .getElementById(
+          'assignment-count-banner'
+        )
+        .classList.add(
+          'hidden'
+        );
+
+
+      document
+        .getElementById(
+          'sls-tujuan-section'
+        )
+        .classList.add(
+          'hidden'
+        );
+
+
+      document
+        .getElementById(
+          'input-keterangan'
+        )
+        .value = '';
+
+
+      document
+        .getElementById(
+          'select-tindakan'
+        )
+        .value = '';
+
+
+      document
+        .querySelectorAll(
+          '.tindakan-btn'
+        )
+        .forEach(button => {
+
+          button.className =
+            'tindakan-btn flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-slate-200 text-xs font-semibold';
+
+        });
+
+
+      selectedTindakan = '';
+
+      selectedSLSTujuan = '';
+
+      currentPPLRows = [];
+
+
+      setStep(0);
+
+    }
+
+
+    /* =====================================================
+       PROGRES - PETUGAS
+    ====================================================== */
+
+    function populateProgresPetugas() {
+
+      const input =
+        document.getElementById(
+          'progres-petugas'
+        );
+
+
+      const list =
+        document.getElementById(
+          'progres-petugas-list'
+        );
+
+
+      if (!input || !list) {
+
+        return;
+
+      }
+
+
+      const uniquePetugas =
+        [
+          ...new Set(
+            laporanData
+              .map(row => {
+
+                return String(
+                  row.nama_ppl ||
+                  row.Nama_PPL ||
+                  row.namaPetugas ||
+                  row.PPL ||
+                  ''
+                ).trim();
+
+              })
+              .filter(Boolean)
+          )
+        ].sort(
+          (a, b) =>
+            a.localeCompare(
+              b,
+              'id'
+            )
+        );
+
+
+      function render(filtered) {
+
+        list.innerHTML = '';
+
+
+        if (!filtered.length) {
+
+          list.innerHTML =
+            '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada petugas ditemukan</div>';
+
+          return;
+
+        }
+
+
+        filtered.forEach(name => {
+
+          const button =
+            document.createElement(
+              'button'
+            );
+
+
+          button.type = 'button';
+
+
+          button.className =
+            'w-full text-left px-3 py-2.5 hover:bg-blue-50 rounded-lg text-sm font-medium';
+
+
+          button.textContent =
+            name;
+
+
+          button.addEventListener(
+            'click',
+            event => {
+
+              event.preventDefault();
+
+
+              input.value =
+                name;
+
+
+              document
+                .getElementById(
+                  'progres-petugas-dropdown'
+                )
+                .classList.add(
+                  'hidden'
+                );
+
+
+              loadProgresSlsList();
+
+            }
+          );
+
+
+          list.appendChild(button);
+
+        });
+
+      }
+
+
+      render(uniquePetugas);
+
+
+      input.oninput =
+        function() {
+
+          const keyword =
+            norm(this.value);
+
+
+          render(
+            uniquePetugas.filter(
+              name =>
+                norm(name)
+                  .includes(keyword)
+            )
+          );
+
+        };
+
+
+      input.onfocus =
+        function() {
+
+          document
+            .getElementById(
+              'progres-petugas-dropdown'
+            )
+            .classList.remove(
+              'hidden'
+            );
+
+        };
+
+    }
+
+
+    /* =====================================================
+       PROGRES - SLS
+    ====================================================== */
+
+    async function loadProgresSlsList() {
+
+      const petugas =
+        document
+          .getElementById(
+            'progres-petugas'
+          )
+          .value
+          .trim();
+
+
+      const selectSls =
+        document.getElementById(
+          'progres-sls'
+        );
+
+
+      selectSls.innerHTML =
+        '<option value="">-- Memuat SLS --</option>';
+
+
+      selectSls.disabled = true;
+
+
+      document
+        .getElementById(
+          'progres-tbody'
+        )
+        .innerHTML =
+        '<tr><td colspan="4" class="p-3 text-center text-slate-400">Silakan pilih SLS.</td></tr>';
+
+
+      if (!petugas) {
+
+        return;
+
+      }
+
+
+      try {
+
+        const response =
+          await fetch(
+            `${SCRIPT_URL}?action=getSlsByPetugas&petugas=${encodeURIComponent(petugas)}&t=${Date.now()}`,
+            {
+              method: 'GET',
+              cache: 'no-store'
+            }
+          );
+
+
+        const result =
+          await response.json();
+
+
+        selectSls.innerHTML =
+          '<option value="">-- Pilih SLS --</option>';
+
+
+        if (
+          result.success &&
+          Array.isArray(result.data) &&
+          result.data.length
+        ) {
+
+          result.data.forEach(
+            sls => {
+
+              const option =
+                document.createElement(
+                  'option'
+                );
+
+
+              option.value =
+                sls;
+
+
+              option.textContent =
+                sls;
+
+
+              selectSls.appendChild(
+                option
+              );
+
+            }
+          );
+
+
+          selectSls.disabled =
+            false;
+
+        } else {
+
+          selectSls.innerHTML =
+            '<option value="">Tidak ada SLS ditemukan</option>';
+
+        }
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        selectSls.innerHTML =
+          '<option value="">Gagal memuat SLS</option>';
+
+      }
+
+    }
+
+
+    /* =====================================================
+       PROGRES - TABLE
+    ====================================================== */
+
+    async function loadProgresTable() {
+
+      const petugas =
+        document
+          .getElementById(
+            'progres-petugas'
+          )
+          .value
+          .trim();
+
+
+      const sls =
+        document
+          .getElementById(
+            'progres-sls'
+          )
+          .value
+          .trim();
+
+
+      const tbody =
+        document.getElementById(
+          'progres-tbody'
+        );
+
+
+      if (!petugas || !sls) {
+
+        tbody.innerHTML =
+          '<tr><td colspan="4" class="p-3 text-center text-slate-400">Silakan pilih petugas dan SLS terlebih dahulu.</td></tr>';
+
+        return;
+
+      }
+
+
+      tbody.innerHTML =
+        '<tr><td colspan="4" class="p-3 text-center text-slate-400">Memuat data...</td></tr>';
+
+
+      try {
+
+        const response =
+          await fetch(
+            `${SCRIPT_URL}?action=getAssignments&petugas=${encodeURIComponent(petugas)}&sls=${encodeURIComponent(sls)}&t=${Date.now()}`,
+            {
+              method: 'GET',
+              cache: 'no-store'
+            }
+          );
+
+
+        const result =
+          await response.json();
+
+
+        tbody.innerHTML = '';
+
+
+        if (
+          !result.success ||
+          !Array.isArray(result.data) ||
+          !result.data.length
+        ) {
+
+          tbody.innerHTML =
+            '<tr><td colspan="4" class="p-3 text-center text-slate-400">Tidak ada data assignment.</td></tr>';
+
+          return;
+
+        }
+
+
+        result.data.forEach(row => {
+
+          const tr =
+            document.createElement(
+              'tr'
+            );
+
+
+          tr.className =
+            'border-b border-slate-100 hover:bg-slate-50';
+
+
+          tr.innerHTML = `
+
+            <td class="p-2 border border-slate-200">
+              ${esc(row.namaAssignment || '')}
+            </td>
+
+
+            <td class="p-2 border border-slate-200">
+
+              <input
+                type="text"
+                class="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                value="${esc(row.jenisTindakan || '')}"
+                id="jenis_${row.rowIndex}"
+              >
+
+            </td>
+
+
+            <td class="p-2 border border-slate-200">
+
+              <input
+                type="text"
+                class="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                value="${esc(row.keterangan || '')}"
+                id="ket_${row.rowIndex}"
+              >
+
+            </td>
+
+
+            <td class="p-2 border border-slate-200 text-center">
+
+              <div class="flex gap-1 justify-center">
+
+                <button
+                  type="button"
+                  class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold"
+                  onclick="saveProgresEdit(${Number(row.rowIndex)})"
+                >
+                  Edit
+                </button>
+
+
+                <button
+                  type="button"
+                  class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-semibold"
+                  onclick="deleteProgresRow(${Number(row.rowIndex)})"
+                >
+                  Hapus
+                </button>
+
+              </div>
+
+            </td>
+
+          `;
+
+
+          tbody.appendChild(tr);
+
+        });
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        tbody.innerHTML =
+          '<tr><td colspan="4" class="p-3 text-center text-red-500">Gagal memuat data dari server.</td></tr>';
+
+      }
+
+    }
+
+
+    /* Event SLS */
+
+    document
+      .getElementById(
+        'progres-sls'
+      )
+      .addEventListener(
+        'change',
+        loadProgresTable
+      );
+
+
+    /* =====================================================
+       EDIT PROGRES
+    ====================================================== */
+
+    async function saveProgresEdit(rowIndex) {
+
+      const jenisElement =
+        document.getElementById(
+          'jenis_' + rowIndex
+        );
+
+
+      const ketElement =
+        document.getElementById(
+          'ket_' + rowIndex
+        );
+
+
+      if (!jenisElement || !ketElement) {
+
+        alert(
+          'Data tidak ditemukan.'
+        );
+
+        return;
+
+      }
+
+
+      const jenis =
+        jenisElement.value.trim();
+
+
+      const keterangan =
+        ketElement.value.trim();
+
+
+      try {
+
+        const response =
+          await fetch(
+            SCRIPT_URL,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type':
+                  'application/x-www-form-urlencoded;charset=UTF-8'
+              },
+              body:
+                new URLSearchParams({
+
+                  action:
+                    'updateAssignment',
+
+                  rowIndex:
+                    rowIndex,
+
+                  jenisTindakan:
+                    jenis,
+
+                  keterangan:
+                    keterangan
+
                 })
-                .catch(err => console.error("Gagal memuat data:", err));
-        }
-
-        // Isi Dropdown Petugas berdasarkan laporanData
-        function populateProgresPetugas() {
-            const selectPetugas = document.getElementById('selectProgresPetugas');
-            selectPetugas.innerHTML = '<option value="">-- Pilih Petugas --</option>';
-            
-            let petugasSet = new Set();
-            globalLaporanData.forEach(row => {
-                let nama = row.nama_ppl || row.Nama_PPL || "";
-                if (nama) petugasSet.add(nama);
-            });
-
-            petugasSet.forEach(nama => {
-                let opt = document.createElement('option');
-                opt.value = nama;
-                opt.textContent = nama;
-                selectPetugas.appendChild(opt);
-            });
-        }
-
-        // Event saat Petugas dipilih -> Ambil SLS terkait
-        function onPetugasChange() {
-            const petugas = document.getElementById('selectProgresPetugas').value;
-            const selectSls = document.getElementById('selectProgresSls');
-            selectSls.innerHTML = '<option value="">-- Pilih SLS --</option>';
-            
-            // Sembunyikan tabel jika pilihan petugas diubah
-            document.getElementById('tabelProgresContainer').style.display = 'none';
-
-            if (!petugas) return;
-
-            fetch(`${SCRIPT_URL}?action=getSlsByPetugas&petugas=${encodeURIComponent(petugas)}`)
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success && res.data) {
-                        res.data.forEach(sls => {
-                            let opt = document.createElement('option');
-                            opt.value = sls;
-                            opt.textContent = sls;
-                            selectSls.appendChild(opt);
-                        });
-                    }
-                });
-        }
-
-        // Memuat Tabel Progres Berdasarkan Petugas dan SLS yang Dipilih
-        function loadProgresTable() {
-            const petugas = document.getElementById('selectProgresPetugas').value;
-            const sls = document.getElementById('selectProgresSls').value;
-            const container = document.getElementById('tabelProgresContainer');
-            const tbody = document.getElementById('bodyTabelProgres');
-
-            if (!petugas || !sls) {
-                container.style.display = 'none';
-                return;
             }
+          );
 
-            fetch(`${SCRIPT_URL}?action=getAssignments&petugas=${encodeURIComponent(petugas)}&sls=${encodeURIComponent(sls)}`)
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success && res.data.length > 0) {
-                        tbody.innerHTML = "";
-                        res.data.forEach((item, index) => {
-                            let tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td class="px-4 py-2">${index + 1}</td>
-                                <td class="px-4 py-2">${item.namaAssignment}</td>
-                                <td class="px-4 py-2">${item.jenisTindakan}</td>
-                                <td class="px-4 py-2">${item.keterangan}</td>
-                                <td class="px-4 py-2 text-center space-x-2">
-                                    <button onclick="editRow(${item.rowIndex}, '${item.jenisTindakan}', '${item.keterangan}')" class="text-blue-600 hover:underline">Edit</button>
-                                    <button onclick="deleteRow(${item.rowIndex})" class="text-red-600 hover:underline">Hapus</button>
-                                </td>
-                            `;
-                            tbody.appendChild(tr);
-                        });
-                        container.style.display = 'block'; // Tampilkan tabel setelah data siap
-                    } else {
-                        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-gray-500">Tidak ada data ditemukan.</td></tr>`;
-                        container.style.display = 'block'; // Tampilkan baris kosong pemberitahuan
-                    }
-                });
+
+        const result =
+          await response.json();
+
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            'Gagal memperbarui data.'
+          );
+
         }
 
-        // Submit Form Konfirmasi dengan Notifikasi Sukses
-        function submitFormKonfirmasi(e) {
-            e.preventDefault();
-            const data = {
-                nama_ppl: document.getElementById('inputNamaPpl').value,
-                nama_sls: document.getElementById('inputNamaSls').value,
-                nama_usaha: document.getElementById('inputNamaUsaha').value,
-                tindakan: document.getElementById('inputTindakan').value,
-                keterangan: document.getElementById('inputKeterangan').value,
-                submitted_at: new Date().toISOString()
+
+        alert(
+          result.message ||
+          'Data berhasil diperbarui!'
+        );
+
+
+        await loadProgresTable();
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        alert(
+          error.message ||
+          'Gagal mengupdate data.'
+        );
+
+      }
+
+    }
+
+
+    /* =====================================================
+       DELETE PROGRES
+    ====================================================== */
+
+    async function deleteProgresRow(rowIndex) {
+
+      const confirmed =
+        confirm(
+          'Apakah Anda yakin ingin menghapus baris data ini?'
+        );
+
+
+      if (!confirmed) {
+
+        return;
+
+      }
+
+
+      try {
+
+        const response =
+          await fetch(
+            SCRIPT_URL,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type':
+                  'application/x-www-form-urlencoded;charset=UTF-8'
+              },
+              body:
+                new URLSearchParams({
+
+                  action:
+                    'deleteAssignment',
+
+                  rowIndex:
+                    rowIndex
+
+                })
+            }
+          );
+
+
+        const result =
+          await response.json();
+
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            'Gagal menghapus data.'
+          );
+
+        }
+
+
+        alert(
+          result.message ||
+          'Data berhasil dihapus!'
+        );
+
+
+        await loadProgresTable();
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        alert(
+          error.message ||
+          'Gagal menghapus data.'
+        );
+
+      }
+
+    }
+
+
+    /* =====================================================
+       SURAT - POPULATE SLS
+    ====================================================== */
+
+    function populateSuratMenu() {
+
+      const searchInput =
+        document.getElementById(
+          'search-surat-sls'
+        );
+
+
+      const list =
+        document.getElementById(
+          'surat-sls-list'
+        );
+
+
+      const hiddenInput =
+        document.getElementById(
+          'surat-sls'
+        );
+
+
+      const desaInput =
+        document.getElementById(
+          'surat-desa'
+        );
+
+
+      if (
+        !Array.isArray(
+          laporanData
+        ) ||
+        !laporanData.length
+      ) {
+
+        list.innerHTML =
+          '<div class="px-3 py-2 text-slate-400 text-sm">Data laporan belum tersedia.</div>';
+
+        return;
+
+      }
+
+
+      const dataSudahSesuai =
+        laporanData.filter(
+          item =>
+            normalizeText(
+              item.tindakan
+            ) ===
+            'sudah sesuai'
+        );
+
+
+      const map = {};
+
+
+      dataSudahSesuai.forEach(
+        item => {
+
+          const namaSls =
+            String(
+              item.nama_sls ||
+              ''
+            ).trim();
+
+
+          if (!namaSls) {
+            return;
+          }
+
+
+          const namaPPL =
+            String(
+              item.nama_ppl ||
+              ''
+            ).trim();
+
+
+          let desa = '';
+
+
+          const match =
+            csvData.find(
+              row => {
+
+                const rowSls =
+                  normalizeText(
+                    getVal(
+                      row,
+                      COL_SLS
+                    )
+                  );
+
+
+                const rowPpl =
+                  normalizeText(
+                    extractPPLName(
+                      getVal(
+                        row,
+                        COL_PPL
+                      )
+                    )
+                  );
+
+
+                return (
+                  rowSls ===
+                    normalizeText(
+                      namaSls
+                    ) &&
+                  rowPpl ===
+                    normalizeText(
+                      extractPPLName(
+                        namaPPL
+                      )
+                    )
+                );
+
+              }
+            );
+
+
+          if (match) {
+
+            desa =
+              getVal(
+                match,
+                COL_DESA
+              ) ||
+              getVal(
+                match,
+                'Nama Desa'
+              ) ||
+              getVal(
+                match,
+                'nama_desa'
+              );
+
+          }
+
+
+          if (!desa) {
+
+            desa =
+              item.nama_desa ||
+              item.Nama_Desa ||
+              item.desa ||
+              '';
+
+          }
+
+
+          desa =
+            String(
+              desa
+            ).trim();
+
+
+          const key =
+            `${normalizeText(namaSls)}___${normalizeText(desa)}`;
+
+
+          if (!map[key]) {
+
+            map[key] = {
+
+              nama:
+                namaSls,
+
+              nama_desa:
+                desa,
+
+              displayText:
+                desa
+                  ? `${namaSls} - DESA ${desa}`
+                  : namaSls,
+
+              jumlah:
+                0
+
             };
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: new URLSearchParams(data)
-            })
-            .then(res => res.json())
-            .then(res => {
-                if (res.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: 'Data konfirmasi berhasil disimpan!',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        document.getElementById('formKonfirmasi').reset();
-                        fetchInitialData();
-                    });
-                } else {
-                    Swal.fire('Gagal', res.message, 'error');
-                }
-            });
+          }
+
+
+          map[key].jumlah++;
+
+        }
+      );
+
+
+      const uniqueSls =
+        Object.values(map)
+          .sort(
+            (a, b) =>
+              a.displayText.localeCompare(
+                b.displayText,
+                'id'
+              )
+          );
+
+
+      function render(filtered) {
+
+        list.innerHTML = '';
+
+
+        if (!filtered.length) {
+
+          list.innerHTML =
+            '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada hasil.</div>';
+
+          return;
+
         }
 
-        // Fungsi Edit Baris Data Progres dengan Notifikasi Sukses Seragam
-        function editRow(rowIndex, oldJenis, oldKet) {
-            Swal.fire({
-                title: 'Edit Data Progres',
-                html: `
-                    <select id="swalEditJenis" class="swal2-input">
-                        <option value="Sesuai" ${oldJenis === 'Sesuai' ? 'selected' : ''}>Sesuai</option>
-                        <option value="Tidak Ditemukan" ${oldJenis === 'Tidak Ditemukan' ? 'selected' : ''}>Tidak Ditemukan</option>
-                        <option value="Ganti Nama" ${oldJenis === 'Ganti Nama' ? 'selected' : ''}>Ganti Nama</option>
-                    </select>
-                    <input id="swalEditKet" class="swal2-input" placeholder="Keterangan" value="${oldKet}">
-                `,
-                confirmButtonText: 'Simpan Perubahan',
-                focusConfirm: false,
-                preConfirm: () => {
-                    return {
-                        jenisTindakan: document.getElementById('swalEditJenis').value,
-                        keterangan: document.getElementById('swalEditKet').value
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const payload = {
-                        action: 'updateAssignment',
-                        rowIndex: rowIndex,
-                        jenisTindakan: result.value.jenisTindakan,
-                        keterangan: result.value.keterangan
-                    };
 
-                    fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: new URLSearchParams(payload)
-                    })
-                    .then(res => res.json())
-                    .then(res => {
-                        if (res.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil!',
-                                text: 'Data berhasil diperbarui!',
-                                timer: 2000,
-                                showConfirmButton: false
-                            }).then(() => {
-                                loadProgresTable();
-                            });
-                        } else {
-                            Swal.fire('Gagal', res.message, 'error');
-                        }
-                    });
-                }
-            });
+        filtered.forEach(item => {
+
+          const button =
+            document.createElement(
+              'button'
+            );
+
+
+          button.type =
+            'button';
+
+
+          button.className =
+            'w-full text-left px-3 py-2.5 hover:bg-blue-50 rounded-lg text-sm font-medium border-b border-slate-100 last:border-none';
+
+
+          button.innerHTML =
+            `${esc(item.displayText)}
+             <span class="text-xs text-slate-500">
+               (${item.jumlah})
+             </span>`;
+
+
+          button.addEventListener(
+            'click',
+            event => {
+
+              event.preventDefault();
+
+
+              searchInput.value =
+                item.displayText;
+
+
+              hiddenInput.value =
+                item.nama;
+
+
+              desaInput.value =
+                item.nama_desa;
+
+
+              document
+                .getElementById(
+                  'surat-sls-dropdown'
+                )
+                .classList.add(
+                  'hidden'
+                );
+
+            }
+          );
+
+
+          list.appendChild(button);
+
+        });
+
+      }
+
+
+      render(uniqueSls);
+
+
+      searchInput.oninput =
+        function() {
+
+          const keyword =
+            norm(this.value);
+
+
+          render(
+            uniqueSls.filter(
+              item =>
+                norm(
+                  item.displayText
+                ).includes(
+                  keyword
+                )
+            )
+          );
+
+        };
+
+
+      searchInput.onfocus =
+        function() {
+
+          document
+            .getElementById(
+              'surat-sls-dropdown'
+            )
+            .classList.remove(
+              'hidden'
+            );
+
+        };
+
+    }
+
+
+    /* =====================================================
+       SURAT ROW
+    ====================================================== */
+
+    function suratRows(sls) {
+
+      const normalized =
+        normalizeText(
+          sls
+        );
+
+
+      return (
+        Array.isArray(
+          laporanData
+        )
+          ? laporanData
+          : []
+      ).filter(
+        row =>
+          normalizeText(
+            row.nama_sls
+          ) === normalized &&
+          normalizeText(
+            row.tindakan
+          ) ===
+            'sudah sesuai'
+      );
+
+    }
+
+
+    /* =====================================================
+       SURAT PAYLOAD
+    ====================================================== */
+
+    function suratPayload() {
+
+      const sls =
+        document
+          .getElementById(
+            'surat-sls'
+          )
+          .value
+          .trim();
+
+
+      const desa =
+        document
+          .getElementById(
+            'surat-desa'
+          )
+          .value
+          .trim();
+
+
+      const tanggal =
+        document
+          .getElementById(
+            'surat-tanggal'
+          )
+          .value;
+
+
+      const ketua =
+        document
+          .getElementById(
+            'surat-ketua'
+          )
+          .value
+          .trim();
+
+
+      if (
+        !sls ||
+        !desa ||
+        !tanggal ||
+        !ketua
+      ) {
+
+        alert(
+          'Harap lengkapi Nama SLS, Desa, Tanggal TTD, dan Nama Ketua.'
+        );
+
+        return null;
+
+      }
+
+
+      const rows =
+        suratRows(sls);
+
+
+      if (!rows.length) {
+
+        alert(
+          "Tidak ada data dengan tindakan 'Sudah Sesuai' untuk SLS ini."
+        );
+
+        return null;
+
+      }
+
+
+      return {
+
+        nama_sls:
+          sls,
+
+        nama_desa:
+          desa,
+
+        tanggal_ttd:
+          tanggal,
+
+        nama_ketua:
+          ketua,
+
+        rows:
+          rows
+
+      };
+
+    }
+
+
+    /* =====================================================
+       BUILD SURAT
+    ====================================================== */
+
+    function buildSurat() {
+
+      const payload =
+        suratPayload();
+
+
+      if (!payload) {
+        return;
+      }
+
+
+      const date =
+        new Date(
+          `${payload.tanggal_ttd}T00:00:00`
+        ).toLocaleDateString(
+          'id-ID',
+          {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          }
+        );
+
+
+      const rows =
+        payload.rows
+          .map(
+            (row, index) =>
+              `
+              <tr>
+
+                <td style="text-align:center;">
+                  ${index + 1}
+                </td>
+
+                <td>
+                  ${esc(
+                    row.nama_assignment
+                  )}
+                </td>
+
+                <td>
+                  ${esc(
+                    row.nama_usaha
+                  )}
+                </td>
+
+                <td style="text-align:center;">
+                  Tidak Ditemukan
+                </td>
+
+              </tr>
+              `
+          )
+          .join('');
+
+
+      const preview =
+        document.getElementById(
+          'surat-preview'
+        );
+
+
+      preview.innerHTML = `
+
+        <article
+          id="surat-document"
+          class="bg-white text-slate-900 p-4"
+        >
+
+          <div
+            style="
+              display:flex;
+              align-items:center;
+              gap:12px;
+              margin-bottom:20px;
+              border-bottom:2px solid #000;
+              padding-bottom:10px;
+            "
+          >
+
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg"
+              style="width:50px;height:50px;object-fit:contain;"
+            >
+
+
+            <div
+              style="
+                font-weight:800;
+                font-style:italic;
+                font-size:11pt;
+                line-height:1.2;
+                color:#003B73;
+              "
+            >
+
+              BADAN PUSAT STATISTIK<br>
+              KABUPATEN LOMBOK UTARA
+
+            </div>
+
+          </div>
+
+
+          <h3
+            style="
+              text-align:center;
+              font-weight:bold;
+              margin-bottom:16px;
+              font-size:13pt;
+            "
+          >
+
+            KONFIRMASI DAFTAR USAHA KELUARGA
+            YANG TIDAK DITEMUKAN DI<br>
+
+            ${esc(payload.nama_sls)}
+
+          </h3>
+
+
+          <table
+            class="surat-table text-xs"
+            style="
+              width:100%;
+              border-collapse:collapse;
+              margin-bottom:24px;
+            "
+          >
+
+            <thead>
+
+              <tr>
+
+                <th style="width:8%;">
+                  No
+                </th>
+
+                <th>
+                  Nama Keluarga
+                </th>
+
+                <th>
+                  Nama Usaha
+                </th>
+
+                <th style="width:20%;">
+                  Status
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+              ${rows}
+
+            </tbody>
+
+          </table>
+
+
+          <div
+            style="
+              display:flex;
+              justify-content:flex-end;
+              margin-top:30px;
+            "
+          >
+
+            <div
+              style="
+                text-align:center;
+                min-width:220px;
+              "
+            >
+
+              ${esc(payload.nama_desa)},
+              ${date}
+
+              <br><br>
+
+              Ketua
+
+              <br>
+
+              ${esc(payload.nama_sls)}
+
+              <br><br><br><br>
+
+              <strong>
+                ${esc(payload.nama_ketua)}
+              </strong>
+
+            </div>
+
+          </div>
+
+        </article>
+
+      `;
+
+
+      preview.classList.remove(
+        'hidden'
+      );
+
+
+      document
+        .getElementById(
+          'surat-actions'
+        )
+        .classList.remove(
+          'hidden'
+        );
+
+
+      preview.scrollIntoView({
+        behavior: 'smooth'
+      });
+
+    }
+
+
+    /* =====================================================
+       DOWNLOAD WORD
+    ====================================================== */
+
+    function generateSuratWord() {
+
+      const payload =
+        suratPayload();
+
+
+      if (!payload) {
+        return;
+      }
+
+
+      const date =
+        new Date(
+          `${payload.tanggal_ttd}T00:00:00`
+        ).toLocaleDateString(
+          'id-ID',
+          {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          }
+        );
+
+
+      const html = `
+
+        <!DOCTYPE html>
+
+        <html>
+
+        <head>
+
+          <meta charset="UTF-8">
+
+          <style>
+
+            @page {
+              size:A4;
+              margin:2cm;
+            }
+
+            body {
+              font-family:Arial,sans-serif;
+              font-size:11pt;
+              color:#000;
+            }
+
+            table {
+              width:100%;
+              border-collapse:collapse;
+              border:1px solid #000;
+            }
+
+            th,
+            td {
+              border:1px solid #000;
+              padding:6px 8px;
+            }
+
+            th {
+              text-align:center;
+              font-weight:bold;
+            }
+
+            .kop {
+              border:none;
+              border-bottom:2px solid #000;
+              margin-bottom:20px;
+            }
+
+            .kop td {
+              border:none;
+            }
+
+            .ttd {
+              border:none;
+              margin-top:30px;
+            }
+
+            .ttd td {
+              border:none;
+            }
+
+          </style>
+
+        </head>
+
+
+        <body>
+
+
+          <table class="kop">
+
+            <tr>
+
+              <td style="width:60px;">
+
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg"
+                  width="50"
+                  height="50"
+                >
+
+              </td>
+
+
+              <td
+                style="
+                  font-weight:bold;
+                  font-style:italic;
+                  color:#003B73;
+                "
+              >
+
+                BADAN PUSAT STATISTIK<br>
+                KABUPATEN LOMBOK UTARA
+
+              </td>
+
+            </tr>
+
+          </table>
+
+
+          <h3
+            style="
+              text-align:center;
+              margin-bottom:16px;
+            "
+          >
+
+            KONFIRMASI DAFTAR USAHA KELUARGA
+            YANG TIDAK DITEMUKAN DI<br>
+
+            ${esc(payload.nama_sls)}
+
+          </h3>
+
+
+          <table>
+
+            <thead>
+
+              <tr>
+
+                <th style="width:8%;">
+                  No
+                </th>
+
+                <th>
+                  Nama Keluarga
+                </th>
+
+                <th>
+                  Nama Usaha
+                </th>
+
+                <th style="width:20%;">
+                  Status
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+              ${payload.rows
+                .map(
+                  (row, index) =>
+                    `
+                    <tr>
+
+                      <td style="text-align:center;">
+                        ${index + 1}
+                      </td>
+
+                      <td>
+                        ${esc(
+                          row.nama_assignment
+                        )}
+                      </td>
+
+                      <td>
+                        ${esc(
+                          row.nama_usaha
+                        )}
+                      </td>
+
+                      <td style="text-align:center;">
+                        Tidak Ditemukan
+                      </td>
+
+                    </tr>
+                    `
+                )
+                .join('')}
+
+            </tbody>
+
+          </table>
+
+
+          <table class="ttd">
+
+            <tr>
+
+              <td style="width:50%;"></td>
+
+              <td
+                style="
+                  width:50%;
+                  text-align:center;
+                "
+              >
+
+                ${esc(payload.nama_desa)},
+                ${date}
+
+                <br><br>
+
+                Ketua
+
+                <br>
+
+                ${esc(payload.nama_sls)}
+
+                <br><br><br><br>
+
+                <b>
+                  ${esc(payload.nama_ketua)}
+                </b>
+
+              </td>
+
+            </tr>
+
+          </table>
+
+
+        </body>
+
+        </html>
+
+      `;
+
+
+      const blob =
+        new Blob(
+          [html],
+          {
+            type:
+              'application/msword'
+          }
+        );
+
+
+      const url =
+        URL.createObjectURL(
+          blob
+        );
+
+
+      const link =
+        document.createElement(
+          'a'
+        );
+
+
+      const safeName =
+        payload.nama_sls
+          .replace(
+            /[\\/:*?"<>|]/g,
+            ''
+          )
+          .trim() ||
+        'SLS';
+
+
+      link.href =
+        url;
+
+
+      link.download =
+        `Surat_Konfirmasi_${safeName}.doc`;
+
+
+      document.body.appendChild(
+        link
+      );
+
+
+      link.click();
+
+
+      link.remove();
+
+
+      setTimeout(
+        () => {
+          URL.revokeObjectURL(url);
+        },
+        1000
+      );
+
+    }
+
+
+    /* =====================================================
+       CETAK SURAT
+    ====================================================== */
+
+    function printSurat() {
+
+      const element =
+        document.getElementById(
+          'surat-document'
+        );
+
+
+      if (!element) {
+
+        alert(
+          'Buat surat terlebih dahulu.'
+        );
+
+        return;
+
+      }
+
+
+      const printWindow =
+        window.open(
+          '',
+          '_blank'
+        );
+
+
+      if (!printWindow) {
+
+        alert(
+          'Browser memblokir pop-up. Silakan izinkan pop-up.'
+        );
+
+        return;
+
+      }
+
+
+      printWindow.document.write(`
+
+        <!DOCTYPE html>
+
+        <html>
+
+        <head>
+
+          <meta charset="UTF-8">
+
+          <title>
+            Surat Konfirmasi
+          </title>
+
+          <style>
+
+            @page {
+              size:A4;
+              margin:2cm;
+            }
+
+            body {
+              font-family:Arial,sans-serif;
+              color:#000;
+            }
+
+            .surat-table {
+              width:100%;
+              border-collapse:collapse;
+              border:1px solid #000;
+            }
+
+            .surat-table th,
+            .surat-table td {
+              border:1px solid #000;
+              padding:6px 8px;
+            }
+
+            .surat-table th {
+              text-align:center;
+            }
+
+          </style>
+
+        </head>
+
+        <body>
+
+          ${element.outerHTML}
+
+        </body>
+
+        </html>
+
+      `);
+
+
+      printWindow.document.close();
+
+
+      printWindow.focus();
+
+
+      setTimeout(
+        () => {
+
+          printWindow.print();
+
+          printWindow.close();
+
+        },
+        500
+      );
+
+    }
+
+
+    /* =====================================================
+       HISTORY
+    ====================================================== */
+
+    function renderHistory(data) {
+
+      const section =
+        document.getElementById(
+          'history-section'
+        );
+
+
+      const tbody =
+        document.getElementById(
+          'history-body'
+        );
+
+
+      if (
+        !Array.isArray(data) ||
+        !data.length
+      ) {
+
+        section.classList.add(
+          'hidden'
+        );
+
+        return;
+
+      }
+
+
+      section.classList.remove(
+        'hidden'
+      );
+
+
+      let filtered =
+        [...data];
+
+
+      if (filterQuery) {
+
+        filtered =
+          filtered.filter(
+            row => {
+
+              const query =
+                normalizeText(
+                  filterQuery
+                );
+
+
+              if (
+                activeFilter ===
+                'ppl'
+              ) {
+
+                return normalizeText(
+                  row.nama_ppl
+                ).includes(
+                  query
+                );
+
+              }
+
+
+              if (
+                activeFilter ===
+                'sls'
+              ) {
+
+                return normalizeText(
+                  row.nama_sls
+                ).includes(
+                  query
+                );
+
+              }
+
+
+              if (
+                activeFilter ===
+                'tindakan'
+              ) {
+
+                return normalizeText(
+                  row.tindakan
+                ).includes(
+                  query
+                );
+
+              }
+
+
+              return (
+
+                normalizeText(
+                  row.nama_ppl
+                ).includes(
+                  query
+                ) ||
+
+                normalizeText(
+                  row.nama_sls
+                ).includes(
+                  query
+                ) ||
+
+                normalizeText(
+                  row.nama_assignment
+                ).includes(
+                  query
+                ) ||
+
+                normalizeText(
+                  row.tindakan
+                ).includes(
+                  query
+                )
+
+              );
+
+            }
+          );
+
+      }
+
+
+      filtered.sort(
+        (a, b) =>
+          String(
+            b.submitted_at ||
+            ''
+          ).localeCompare(
+            String(
+              a.submitted_at ||
+              ''
+            )
+          )
+      );
+
+
+      tbody.innerHTML = '';
+
+
+      filtered
+        .slice(0, 10)
+        .forEach(
+          row =>
+            tbody.appendChild(
+              createHistoryRow(
+                row
+              )
+            )
+        );
+
+
+      if (
+        typeof lucide !==
+        'undefined'
+      ) {
+
+        lucide.createIcons();
+
+      }
+
+    }
+
+
+    function createHistoryRow(row) {
+
+      const tr =
+        document.createElement(
+          'tr'
+        );
+
+
+      tr.className =
+        'border-b border-slate-100 hover:bg-slate-50';
+
+
+      const time =
+        row.submitted_at
+          ? new Date(
+              row.submitted_at
+            ).toLocaleString(
+              'id-ID',
+              {
+                dateStyle:
+                  'short',
+                timeStyle:
+                  'short'
+              }
+            )
+          : '-';
+
+
+      tr.innerHTML = `
+
+        <td class="px-3 py-2.5">
+          ${esc(row.nama_ppl)}
+        </td>
+
+        <td class="px-3 py-2.5">
+          ${esc(row.nama_sls)}
+        </td>
+
+        <td class="px-3 py-2.5">
+          ${esc(row.nama_assignment)}
+        </td>
+
+        <td class="px-3 py-2.5">
+
+          <span
+            class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${actionColor(row.tindakan)}"
+          >
+            ${esc(row.tindakan)}
+          </span>
+
+        </td>
+
+        <td class="px-3 py-2.5 text-slate-500">
+          ${time}
+        </td>
+
+      `;
+
+
+      return tr;
+
+    }
+
+
+    function actionColor(tindakan) {
+
+      if (
+        tindakan ===
+        'Salah SLS'
+      ) {
+
+        return 'bg-red-100 text-red-700';
+
+      }
+
+
+      if (
+        tindakan ===
+        'Sudah Sesuai'
+      ) {
+
+        return 'bg-green-100 text-green-700';
+
+      }
+
+
+      if (
+        String(
+          tindakan || ''
+        ).startsWith(
+          'Berubah'
+        )
+      ) {
+
+        return 'bg-amber-100 text-amber-700';
+
+      }
+
+
+      if (
+        tindakan ===
+        'Ditemukan'
+      ) {
+
+        return 'bg-blue-100 text-blue-700';
+
+      }
+
+
+      return 'bg-slate-100 text-slate-700';
+
+    }
+
+
+    /* =====================================================
+       FILTER
+    ====================================================== */
+
+    document
+      .getElementById(
+        'filter-bar'
+      )
+      .addEventListener(
+        'click',
+        event => {
+
+          const button =
+            event.target.closest(
+              '.filter-btn'
+            );
+
+
+          if (!button) {
+            return;
+          }
+
+
+          document
+            .querySelectorAll(
+              '.filter-btn'
+            )
+            .forEach(
+              btn =>
+                btn.classList.remove(
+                  'active'
+                )
+            );
+
+
+          button.classList.add(
+            'active'
+          );
+
+
+          activeFilter =
+            button.dataset.filter;
+
+
+          renderHistory(
+            allRecords
+          );
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        'filter-search'
+      )
+      .addEventListener(
+        'input',
+        event => {
+
+          filterQuery =
+            normalizeText(
+              event.target.value
+            );
+
+
+          renderHistory(
+            allRecords
+          );
+
+        }
+      );
+
+
+    /* =====================================================
+       NAVIGATION EVENTS
+    ====================================================== */
+
+    document
+      .getElementById(
+        'show-form-btn'
+      )
+      .addEventListener(
+        'click',
+        () =>
+          showPage(
+            'form'
+          )
+      );
+
+
+    document
+      .getElementById(
+        'show-surat-btn'
+      )
+      .addEventListener(
+        'click',
+        () =>
+          showPage(
+            'surat'
+          )
+      );
+
+
+    document
+      .getElementById(
+        'show-progres-btn'
+      )
+      .addEventListener(
+        'click',
+        () =>
+          showPage(
+            'progres'
+          )
+      );
+
+
+    /* =====================================================
+       GLOBAL DROPDOWN CLICK
+    ====================================================== */
+
+    document.addEventListener(
+      'click',
+      event => {
+
+        const dropdowns = [
+
+          {
+            input:
+              'search-ppl',
+
+            dropdown:
+              'ppl-dropdown'
+          },
+
+          {
+            input:
+              'search-sls-tujuan',
+
+            dropdown:
+              'sls-tujuan-dropdown'
+          },
+
+          {
+            input:
+              'search-surat-sls',
+
+            dropdown:
+              'surat-sls-dropdown'
+          },
+
+          {
+            input:
+              'progres-petugas',
+
+            dropdown:
+              'progres-petugas-dropdown'
+          }
+
+        ];
+
+
+        dropdowns.forEach(
+          item => {
+
+            const dropdown =
+              document.getElementById(
+                item.dropdown
+              );
+
+
+            const input =
+              document.getElementById(
+                item.input
+              );
+
+
+            if (
+              dropdown &&
+              input &&
+              !event.target.closest(
+                `#${item.input}`
+              ) &&
+              !dropdown.contains(
+                event.target
+              )
+            ) {
+
+              dropdown.classList.add(
+                'hidden'
+              );
+
+            }
+
+          }
+        );
+
+      }
+    );
+
+
+    /* =====================================================
+       DOM READY
+    ====================================================== */
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      async () => {
+
+        if (
+          typeof lucide !==
+          'undefined'
+        ) {
+
+          lucide.createIcons();
+
         }
 
-        // Fungsi Hapus Baris Data Progres dengan Notifikasi Sukses Seragam
-        function deleteRow(rowIndex) {
-            Swal.fire({
-                title: 'Apakah Anda yakin?',
-                text: "Data yang dihapus tidak dapat dikembalikan!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const payload = {
-                        action: 'deleteAssignment',
-                        rowIndex: rowIndex
-                    };
 
-                    fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: new URLSearchParams(payload)
-                    })
-                    .then(res => res.json())
-                    .then(res => {
-                        if (res.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Terhapus!',
-                                text: 'Data berhasil dihapus dari sistem.',
-                                timer: 2000,
-                                showConfirmButton: false
-                            }).then(() => {
-                                loadProgresTable();
-                            });
-                        } else {
-                            Swal.fire('Gagal', res.message, 'error');
-                        }
-                    });
-                }
-            });
-        }
-    </script>
+        /* Surat */
+
+        document
+          .getElementById(
+            'surat-create'
+          )
+          .addEventListener(
+            'click',
+            buildSurat
+          );
+
+
+        document
+          .getElementById(
+            'surat-download'
+          )
+          .addEventListener(
+            'click',
+            generateSuratWord
+          );
+
+
+        document
+          .getElementById(
+            'surat-print'
+          )
+          .addEventListener(
+            'click',
+            printSurat
+          );
+
+
+        /* Load data */
+
+        await loadCSV();
+
+      }
+    );
+
+  </script>
+
 </body>
 </html>
