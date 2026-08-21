@@ -87,7 +87,7 @@
             </div>
 
             <!-- TABEL PROGRES (Disembunyikan secara default, baru muncul setelah data dipilih/dimuat) -->
-            <div id="tabelProgresContainer" class="overflow-x-auto mt-6 hidden">
+            <div id="tabelProgresContainer" class="overflow-x-auto mt-6" style="display: none;">
                 <table class="min-w-full divide-y divide-gray-200 border">
                     <thead class="bg-gray-100">
                         <tr>
@@ -174,67 +174,69 @@
 
         // Event saat Petugas dipilih -> Ambil SLS terkait
         function onPetugasChange() {
-            const petugas = document.getElementById('selectProgresPetugas').value;
-            const selectSls = document.getElementById('selectProgresSls');
-            selectSls.innerHTML = '<option value="">-- Pilih SLS --</option>';
-            
-            // Sembunyikan tabel jika pilihan petugas diubah
-            document.getElementById('tabelProgresContainer').style.display = 'none';
+    const petugas = document.getElementById('selectProgresPetugas').value;
+    const selectSls = document.getElementById('selectProgresSls');
+    selectSls.innerHTML = '<option value="">-- Pilih SLS --</option>';
+    
+    // Pastikan seluruh tabel disembunyikan lagi jika pilihan Petugas diubah
+    document.getElementById('tabelProgresContainer').style.display = 'none';
 
-            if (!petugas) return;
+    if (!petugas) return;
 
-            fetch(`${SCRIPT_URL}?action=getSlsByPetugas&petugas=${encodeURIComponent(petugas)}`)
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success && res.data) {
-                        res.data.forEach(sls => {
-                            let opt = document.createElement('option');
-                            opt.value = sls;
-                            opt.textContent = sls;
-                            selectSls.appendChild(opt);
-                        });
-                    }
+    fetch(`${SCRIPT_URL}?action=getSlsByPetugas&petugas=${encodeURIComponent(petugas)}`)
+        .then(res => res.json())
+        .then(res => {
+            if (res.success && res.data) {
+                res.data.forEach(sls => {
+                    let opt = document.createElement('option');
+                    opt.value = sls;
+                    opt.textContent = sls;
+                    selectSls.appendChild(opt);
                 });
-        }
+            }
+        });
+}
 
         // Memuat Tabel Progres Berdasarkan Petugas dan SLS yang Dipilih
         function loadProgresTable() {
-            const petugas = document.getElementById('selectProgresPetugas').value;
-            const sls = document.getElementById('selectProgresSls').value;
-            const container = document.getElementById('tabelProgresContainer');
-            const tbody = document.getElementById('bodyTabelProgres');
+    const petugas = document.getElementById('selectProgresPetugas').value;
+    const sls = document.getElementById('selectProgresSls').value;
+    const container = document.getElementById('tabelProgresContainer');
+    const tbody = document.getElementById('bodyTabelProgres');
 
-            if (!petugas || !sls) {
-                container.style.display = 'none';
-                return;
-            }
+    // Jika Petugas atau SLS belum dipilih, tabel tetap disembunyikan secara total
+    if (!petugas || !sls) {
+        container.style.display = 'none';
+        return;
+    }
 
-            fetch(`${SCRIPT_URL}?action=getAssignments&petugas=${encodeURIComponent(petugas)}&sls=${encodeURIComponent(sls)}`)
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success && res.data.length > 0) {
-                        tbody.innerHTML = "";
-                        res.data.forEach((item, index) => {
-                            let tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td class="px-4 py-2">${index + 1}</td>
-                                <td class="px-4 py-2">${item.namaAssignment}</td>
-                                <td class="px-4 py-2">${item.jenisTindakan}</td>
-                                <td class="px-4 py-2">${item.keterangan}</td>
-                                <td class="px-4 py-2 text-center space-x-2">
-                                    <button onclick="editRow(${item.rowIndex}, '${item.jenisTindakan}', '${item.keterangan}')" class="text-blue-600 hover:underline">Edit</button>
-                                    <button onclick="deleteRow(${item.rowIndex})" class="text-red-600 hover:underline">Hapus</button>
-                                </td>
-                            `;
-                            tbody.appendChild(tr);
-                        });
-                        container.style.display = 'block'; // Tampilkan tabel setelah data siap
-                    } else {
-                        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-gray-500">Tidak ada data ditemukan.</td></tr>`;
-                        container.style.display = 'block'; // Tampilkan baris kosong pemberitahuan
-                    }
+    fetch(`${SCRIPT_URL}?action=getAssignments&petugas=${encodeURIComponent(petugas)}&sls=${encodeURIComponent(sls)}`)
+        .then(res => res.json())
+        .then(res => {
+            if (res.success && res.data.length > 0) {
+                tbody.innerHTML = "";
+                res.data.forEach((item, index) => {
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="px-4 py-2">${index + 1}</td>
+                        <td class="px-4 py-2">${item.namaAssignment}</td>
+                        <td class="px-4 py-2">${item.jenisTindakan}</td>
+                        <td class="px-4 py-2">${item.keterangan}</td>
+                        <td class="px-4 py-2 text-center space-x-2">
+                            <button onclick="editRow(${item.rowIndex}, '${item.jenisTindakan}', '${item.keterangan}')" class="text-blue-600 hover:underline">Edit</button>
+                            <button onclick="deleteRow(${item.rowIndex})" class="text-red-600 hover:underline">Hapus</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 });
-        }
+                // Munculkan tabel beserta header hanya setelah data siap
+                container.style.display = 'block';
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-gray-500">Tidak ada data ditemukan.</td></tr>`;
+                container.style.display = 'block';
+            }
+        });
+}
 
         // Submit Form Konfirmasi dengan Notifikasi Sukses
         function submitFormKonfirmasi(e) {
@@ -273,98 +275,98 @@
 
         // Fungsi Edit Baris Data Progres dengan Notifikasi Sukses Seragam
         function editRow(rowIndex, oldJenis, oldKet) {
-            Swal.fire({
-                title: 'Edit Data Progres',
-                html: `
-                    <select id="swalEditJenis" class="swal2-input">
-                        <option value="Sesuai" ${oldJenis === 'Sesuai' ? 'selected' : ''}>Sesuai</option>
-                        <option value="Tidak Ditemukan" ${oldJenis === 'Tidak Ditemukan' ? 'selected' : ''}>Tidak Ditemukan</option>
-                        <option value="Ganti Nama" ${oldJenis === 'Ganti Nama' ? 'selected' : ''}>Ganti Nama</option>
-                    </select>
-                    <input id="swalEditKet" class="swal2-input" placeholder="Keterangan" value="${oldKet}">
-                `,
-                confirmButtonText: 'Simpan Perubahan',
-                focusConfirm: false,
-                preConfirm: () => {
-                    return {
-                        jenisTindakan: document.getElementById('swalEditJenis').value,
-                        keterangan: document.getElementById('swalEditKet').value
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const payload = {
-                        action: 'updateAssignment',
-                        rowIndex: rowIndex,
-                        jenisTindakan: result.value.jenisTindakan,
-                        keterangan: result.value.keterangan
-                    };
+    Swal.fire({
+        title: 'Edit Data Progres',
+        html: `
+            <select id="swalEditJenis" class="swal2-input">
+                <option value="Sesuai" ${oldJenis === 'Sesuai' ? 'selected' : ''}>Sesuai</option>
+                <option value="Tidak Ditemukan" ${oldJenis === 'Tidak Ditemukan' ? 'selected' : ''}>Tidak Ditemukan</option>
+                <option value="Ganti Nama" ${oldJenis === 'Ganti Nama' ? 'selected' : ''}>Ganti Nama</option>
+            </select>
+            <input id="swalEditKet" class="swal2-input" placeholder="Keterangan" value="${oldKet}">
+        `,
+        confirmButtonText: 'Simpan Perubahan',
+        focusConfirm: false,
+        preConfirm: () => {
+            return {
+                jenisTindakan: document.getElementById('swalEditJenis').value,
+                keterangan: document.getElementById('swalEditKet').value
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const payload = {
+                action: 'updateAssignment',
+                rowIndex: rowIndex,
+                jenisTindakan: result.value.jenisTindakan,
+                keterangan: result.value.keterangan
+            };
 
-                    fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: new URLSearchParams(payload)
-                    })
-                    .then(res => res.json())
-                    .then(res => {
-                        if (res.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil!',
-                                text: 'Data berhasil diperbarui!',
-                                timer: 2000,
-                                showConfirmButton: false
-                            }).then(() => {
-                                loadProgresTable();
-                            });
-                        } else {
-                            Swal.fire('Gagal', res.message, 'error');
-                        }
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: new URLSearchParams(payload)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Data berhasil diperbarui!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        loadProgresTable();
                     });
+                } else {
+                    Swal.fire('Gagal', res.message, 'error');
                 }
             });
         }
+    });
+}
 
         // Fungsi Hapus Baris Data Progres dengan Notifikasi Sukses Seragam
         function deleteRow(rowIndex) {
-            Swal.fire({
-                title: 'Apakah Anda yakin?',
-                text: "Data yang dihapus tidak dapat dikembalikan!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const payload = {
-                        action: 'deleteAssignment',
-                        rowIndex: rowIndex
-                    };
+    Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Data yang dihapus tidak dapat dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const payload = {
+                action: 'deleteAssignment',
+                rowIndex: rowIndex
+            };
 
-                    fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: new URLSearchParams(payload)
-                    })
-                    .then(res => res.json())
-                    .then(res => {
-                        if (res.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Terhapus!',
-                                text: 'Data berhasil dihapus dari sistem.',
-                                timer: 2000,
-                                showConfirmButton: false
-                            }).then(() => {
-                                loadProgresTable();
-                            });
-                        } else {
-                            Swal.fire('Gagal', res.message, 'error');
-                        }
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: new URLSearchParams(payload)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Terhapus!',
+                        text: 'Data berhasil dihapus dari sistem.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        loadProgresTable();
                     });
+                } else {
+                    Swal.fire('Gagal', res.message, 'error');
                 }
             });
         }
+    });
+}
     </script>
 </body>
 </html>
