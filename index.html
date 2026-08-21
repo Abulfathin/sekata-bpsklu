@@ -475,13 +475,13 @@
         populateSuratMenu();
 
         // Inisialisasi pilihan nama petugas berdasarkan data laporan yang sudah masuk
-    function populateProgresPetugas() {
+    function populateProgresPetugas() {function populateProgresPetugas() {
       const searchInput = document.getElementById('progres-petugas');
       const petugasListDiv = document.getElementById('progres-petugas-list');
       
-      // Ambil daftar nama unik petugas dari laporanData yang sudah di-load saat start
+      // Ambil daftar nama unik petugas dari laporanData dengan mencocokkan berbagai kemungkinan key
       const uniquePetugas = [...new Set(
-        laporanData.map(r => String(r.nama_ppl || '').trim()).filter(Boolean)
+        laporanData.map(r => String(r.nama_ppl || r.Nama_PPL || r['nama_ppl'] || '').trim()).filter(Boolean)
       )].sort((a, b) => a.localeCompare(b, 'id'));
 
       function renderList(filtered) {
@@ -499,7 +499,7 @@
             e.preventDefault();
             searchInput.value = nama;
             document.getElementById('progres-petugas-dropdown').classList.add('hidden');
-            loadProgresSlsList(); // Langsung muat SLS berdasarkan petugas yang dipilih
+            loadProgresSlsList(); // Otomatis panggil list SLS
           });
           petugasListDiv.appendChild(btn);
         });
