@@ -116,13 +116,23 @@
           <h2 class="font-bold text-[#003B73] text-lg">Cetak Surat Konfirmasi Ketua SLS</h2>
         </div>
         <div class="space-y-3">
+          <!-- Dropdown Pencarian SLS/RT -->
           <div>
-            <label for="surat-sls" class="block mb-1 font-semibold text-sm text-slate-800">Nama SLS/RT</label>
-            <select id="surat-sls" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm"></select>
+            <label for="search-surat-sls" class="block mb-1 font-semibold text-sm text-slate-800">Nama SLS/RT</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#0061A8]">
+                <i data-lucide="map-pin" style="width:18px;height:18px;"></i>
+              </span>
+              <input id="search-surat-sls" type="text" placeholder="Ketik nama SLS/RT..." class="w-full border-2 border-[#0061A8] rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:ring-2 focus:ring-[#0061A8]/30 bg-blue-50/30">
+              <div id="surat-sls-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto">
+                <div class="p-2" id="surat-sls-list"></div>
+              </div>
+            </div>
+            <input type="hidden" id="surat-sls" value="">
           </div>
           <div>
             <label for="surat-desa" class="block mb-1 font-semibold text-sm text-slate-800">Nama Desa</label>
-            <input id="surat-desa" type="text" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm">
+            <input id="surat-desa" type="text" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm bg-slate-50">
           </div>
           <div>
             <label for="surat-tanggal" class="block mb-1 font-semibold text-sm text-slate-800">Tanggal TTD</label>
@@ -130,7 +140,7 @@
           </div>
           <div>
             <label for="surat-ketua" class="block mb-1 font-semibold text-sm text-slate-800">Nama Ketua RT</label>
-            <input id="surat-ketua" type="text" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm">
+            <input id="surat-ketua" type="text" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm" placeholder="Masukkan nama ketua RT...">
           </div>
           <button id="surat-create" type="button" class="w-full py-3 rounded-xl font-bold bg-[#0061A8] text-white">Buat Surat Konfirmasi</button>
         </div>
@@ -724,7 +734,7 @@
     });
 
     // =====================================================
-    // EVENT TINDAKAN (DIPERBAIKI)
+    // EVENT TINDAKAN
     // =====================================================
     document.getElementById('tindakan-group').addEventListener('click', function(e) {
       const btn = e.target.closest('.tindakan-btn');
@@ -971,7 +981,7 @@
     }
 
     // =====================================================
-    // SURAT KONFIRMASI KETUA SLS (MATCHING DESA DARI SHEET1)
+    // SURAT KONFIRMASI KETUA SLS (WITH SEARCHABLE DROPDOWN)
     // =====================================================
     function suratRows(slsValue) {
       const selectedSlsNormalized = normalizeText(slsValue);
@@ -983,11 +993,13 @@
     }
 
     function populateSuratMenu() {
-      const section = document.getElementById('surat-section');
-      const select = document.getElementById('surat-sls');
+      const searchInput = document.getElementById('search-surat-sls');
+      const suratSlsList = document.getElementById('surat-sls-list');
+      const hiddenInput = document.getElementById('surat-sls');
+      const desaInput = document.getElementById('surat-desa');
 
       if (!Array.isArray(laporanData) || laporanData.length === 0) {
-        select.innerHTML = '<option value="">-- Data Laporan tidak tersedia --</option>';
+        if (suratSlsList) suratSlsList.innerHTML = '<div class="px-3 py-2 text-slate-400 text-sm">Data Laporan tidak tersedia</div>';
         return;
       }
 
@@ -1012,7 +1024,6 @@
           }
         }
 
-        // Fallback pencocokan SLS saja jika tidak ketemu via PPL
         if (!matchedDesa && Array.isArray(csvData) && csvData.length > 0) {
           const fallbackRow = csvData.find(r => normalizeText(getVal(r, COL_SLS)) === normalizeText(rawSls));
           if (fallbackRow) {
@@ -1038,18 +1049,47 @@
         a.displayText.localeCompare(b.displayText, 'id')
       );
 
-      select.innerHTML = '<option value="">-- Pilih Nama SLS/RT --</option>' +
-        uniqueSls.map(item =>
-          `<option value="${esc(item.nama)}" data-desa="${esc(item.nama_desa)}">${esc(item.displayText)} (${item.jumlah})</option>`
-        ).join('');
+      function render(filtered) {
+        suratSlsList.innerHTML = '';
+        if (!filtered.length) {
+          suratSlsList.innerHTML = '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada hasil</div>';
+          return;
+        }
 
-      section.classList.add('hidden');
+        filtered.forEach(item => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'w-full text-left px-3 py-2.5 hover:bg-blue-50 rounded-lg text-sm font-medium border-b border-slate-100 last:border-none';
+          btn.innerHTML = `${esc(item.displayText)} <span class="text-xs text-slate-500">(${item.jumlah})</span>`;
+          btn.addEventListener('click', e => {
+            e.preventDefault();
+            searchInput.value = item.displayText;
+            hiddenInput.value = item.nama;
+            if (desaInput) desaInput.value = item.nama_desa;
+            document.getElementById('surat-sls-dropdown').classList.add('hidden');
+          });
+          suratSlsList.appendChild(btn);
+        });
+      }
 
-      select.addEventListener('change', function() {
-        const selectedOpt = this.options[this.selectedIndex];
-        const desaVal = selectedOpt ? selectedOpt.dataset.desa : '';
-        const desaInput = document.getElementById('surat-desa');
-        if (desaInput && desaVal) desaInput.value = desaVal;
+      render(uniqueSls);
+
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          const keyword = norm(this.value);
+          render(uniqueSls.filter(item => norm(item.displayText).includes(keyword)));
+        });
+
+        searchInput.addEventListener('focus', () => {
+          document.getElementById('surat-sls-dropdown').classList.remove('hidden');
+        });
+      }
+
+      document.addEventListener('click', e => {
+        const dropdown = document.getElementById('surat-sls-dropdown');
+        if (dropdown && !e.target.closest('#search-surat-sls') && !dropdown.contains(e.target)) {
+          dropdown.classList.add('hidden');
+        }
       });
     }
 
@@ -1150,7 +1190,7 @@
           </div>
 
           <h3 style="text-align: center; font-weight: bold; margin-bottom: 16px; font-size: 13pt;">
-            KONFIRMASI DAFTAR USAHA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}
+            KONFIRMASI DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}
           </h3>
 
           <table class="surat-table text-xs" style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
@@ -1220,7 +1260,7 @@
             </tr>
           </table>
 
-          <h3 align="center">KONFIRMASI DAFTAR USAHA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3>
+          <h3 align="center">KONFIRMASI DAFTAR USAHA KELUARGA YANG TIDAK DITEMUKAN DI<br>${esc(payload.nama_sls)}</h3>
           <table>
             <thead>
               <tr>
