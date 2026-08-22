@@ -42,6 +42,7 @@
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:100; animation:fadeIn 0.2s; }
     @keyframes fadeIn { from{opacity:0} to{opacity:1} }
     .modal-content { animation: scaleIn 0.3s ease-out; }
+    #success-modal .modal-overlay { z-index: 200; }
     @keyframes scaleIn { from{transform:scale(0.8);opacity:0} to{transform:scale(1);opacity:1} }
     .checkmark-circle { animation: pop 0.4s ease-out 0.2s both; }
     @keyframes pop { from{transform:scale(0)} to{transform:scale(1)} }
@@ -167,10 +168,17 @@
 
         <div class="space-y-4">
           <div>
-            <label for="progress-ppl" class="block mb-1 font-semibold text-sm text-slate-800">Nama PPL</label>
-            <select id="progress-ppl" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30 bg-white">
-              <option value="">-- Pilih PPL --</option>
-            </select>
+            <label for="search-progress-ppl" class="block mb-1 font-semibold text-sm text-slate-800">Nama PPL</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#0061A8]">
+                <i data-lucide="search" style="width:18px;height:18px;"></i>
+              </span>
+              <input id="search-progress-ppl" type="text" autocomplete="off" placeholder="Ketik nama PPL..." class="w-full border-2 border-[#0061A8] rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:ring-2 focus:ring-[#0061A8]/30 bg-blue-50/30">
+              <div id="progress-ppl-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 max-h-48 overflow-y-auto">
+                <div class="p-2" id="progress-ppl-list"></div>
+              </div>
+            </div>
+            <input type="hidden" id="progress-ppl" value="">
           </div>
 
           <div>
@@ -1083,19 +1091,65 @@
     // MENU CEK PROGRES
     // =====================================================
     function populateProgressPPL() {
-      const pplSel = document.getElementById('progress-ppl');
-      if (!pplSel) return;
+      const searchInput = document.getElementById('search-progress-ppl');
+      const pplList = document.getElementById('progress-ppl-list');
+      const hiddenInput = document.getElementById('progress-ppl');
+      const dropdown = document.getElementById('progress-ppl-dropdown');
+      if (!searchInput || !pplList || !hiddenInput || !dropdown) return;
 
       const uniquePPL = [...new Set(
         csvData.map(r => extractPPLName(getVal(r, COL_PPL))).filter(Boolean)
       )].sort((a, b) => a.localeCompare(b, 'id'));
 
-      pplSel.innerHTML = '<option value="">-- Pilih PPL --</option>';
-      uniquePPL.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        pplSel.appendChild(opt);
+      function render(filtered) {
+        pplList.innerHTML = '';
+        if (!filtered.length) {
+          pplList.innerHTML = '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada hasil</div>';
+          return;
+        }
+
+        filtered.forEach(name => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'w-full text-left px-3 py-2.5 hover:bg-blue-50 rounded-lg text-sm font-medium';
+          btn.textContent = name;
+          btn.addEventListener('click', e => {
+            e.preventDefault();
+            searchInput.value = name;
+            hiddenInput.value = name;
+            dropdown.classList.add('hidden');
+            populateProgressSLS();
+          });
+          pplList.appendChild(btn);
+        });
+      }
+
+      render(uniquePPL);
+
+      searchInput.addEventListener('input', function() {
+        const keyword = norm(this.value);
+        hiddenInput.value = '';
+        render(uniquePPL.filter(name => norm(name).includes(keyword)));
+        dropdown.classList.remove('hidden');
+
+        const slsSel = document.getElementById('progress-sls');
+        if (slsSel) {
+          slsSel.innerHTML = '<option value="">-- Pilih SLS --</option>';
+          slsSel.disabled = true;
+        }
+        resetProgressResult();
+      });
+
+      searchInput.addEventListener('focus', () => {
+        const keyword = norm(searchInput.value);
+        render(uniquePPL.filter(name => norm(name).includes(keyword)));
+        dropdown.classList.remove('hidden');
+      });
+
+      document.addEventListener('click', e => {
+        if (!e.target.closest('#search-progress-ppl') && !dropdown.contains(e.target)) {
+          dropdown.classList.add('hidden');
+        }
       });
     }
 
@@ -1347,9 +1401,15 @@
         });
 
         closeProgressEditModal();
-        await maybeLoadProgress();
-        await refreshLaporanData();
+
+        // Tampilkan popup segera setelah backend menyatakan update berhasil.
+        // Refresh tabel dilakukan setelahnya agar koneksi lambat tidak menahan popup.
         showSuccessModal('Update berhasil disimpan', 'Data assignment telah berhasil diperbarui');
+
+        Promise.allSettled([
+          maybeLoadProgress(),
+          refreshLaporanData()
+        ]);
       } catch (error) {
         alert('Gagal memperbarui data: ' + (error.message || error));
       } finally {
@@ -1380,9 +1440,13 @@
           rowIndex: rec.rowIndex
         });
 
-        await maybeLoadProgress();
-        await refreshLaporanData();
+        // Tampilkan popup segera setelah backend menyatakan hapus berhasil.
         showSuccessModal('Assignment berhasil dihapus', 'Data assignment telah berhasil dihapus');
+
+        Promise.allSettled([
+          maybeLoadProgress(),
+          refreshLaporanData()
+        ]);
       } catch (error) {
         alert('Gagal menghapus data: ' + (error.message || error));
       }
@@ -1761,11 +1825,6 @@
 
         const btnDownload = document.getElementById('surat-download');
         if (btnDownload) btnDownload.addEventListener('click', generateSuratWord);
-
-        const progressPpl = document.getElementById('progress-ppl');
-        if (progressPpl) progressPpl.addEventListener('change', () => {
-          populateProgressSLS();
-        });
 
         const progressSls = document.getElementById('progress-sls');
         if (progressSls) progressSls.addEventListener('change', maybeLoadProgress);
