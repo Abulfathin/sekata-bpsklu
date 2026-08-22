@@ -1195,6 +1195,7 @@
             <th class="px-3 py-2.5 text-left font-semibold">Nama Assignment</th>
             <th class="px-3 py-2.5 text-left font-semibold">Tindakan</th>
             <th class="px-3 py-2.5 text-left font-semibold">Keterangan</th>
+            <th class="px-3 py-2.5 text-center font-semibold">Aksi</th>
           </tr>`;
 
         rows.forEach((rec, i) => {
@@ -1204,12 +1205,143 @@
             <td class="px-3 py-2.5 text-center">${i + 1}</td>
             <td class="px-3 py-2.5">${esc(rec.namaAssignment || '')}</td>
             <td class="px-3 py-2.5"><span class="px-2 py-1 rounded-full text-[10px] font-semibold ${actionColor(rec.jenisTindakan)}">${esc(rec.jenisTindakan || '-')}</span></td>
-            <td class="px-3 py-2.5">${esc(rec.keterangan || '-')}</td>`;
+            <td class="px-3 py-2.5">${esc(rec.keterangan || '-')}</td>
+            <td class="px-3 py-2.5">
+              <div class="flex items-center justify-center gap-1.5">
+                <button type="button" class="progress-edit-btn px-2.5 py-1.5 rounded-lg bg-amber-100 text-amber-800 font-bold text-[11px] hover:bg-amber-200" data-row-index="${esc(String(rec.rowIndex || ''))}">Edit</button>
+                <button type="button" class="progress-delete-btn px-2.5 py-1.5 rounded-lg bg-red-100 text-red-700 font-bold text-[11px] hover:bg-red-200" data-row-index="${esc(String(rec.rowIndex || ''))}">Hapus</button>
+              </div>
+            </td>`;
+
+          const editBtn = tr.querySelector('.progress-edit-btn');
+          const deleteBtn = tr.querySelector('.progress-delete-btn');
+
+          if (editBtn) {
+            editBtn.addEventListener('click', () => editProgressAssignment(rec));
+          }
+
+          if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => deleteProgressAssignment(rec));
+          }
+
           body.appendChild(tr);
         });
       }
 
       wrap.classList.remove('hidden');
+    }
+
+    async function postProgressAction(payload) {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: new URLSearchParams(payload)
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result || result.success !== true) {
+        throw new Error(result?.message || 'Gagal memproses perubahan data.');
+      }
+      return result;
+    }
+
+    async function editProgressAssignment(rec) {
+      if (!rec || !rec.rowIndex) {
+        alert('Row index tidak ditemukan. Silakan muat ulang data progres.');
+        return;
+      }
+
+      const pilihan = [
+        'Sudah Sesuai',
+        'Salah SLS',
+        'Berubah Status',
+        'Ditemukan'
+      ];
+
+      const tindakanAwal = String(rec.jenisTindakan || '').trim();
+      const pesanTindakan =
+        'Edit Tindakan untuk:\n' + (rec.namaAssignment || '-') +
+        '\n\nPilihan: ' + pilihan.join(' / ') +
+        '\n\nMasukkan tindakan:';
+
+      const tindakanBaru = prompt(pesanTindakan, tindakanAwal);
+      if (tindakanBaru === null) return;
+
+      const tindakanBersih = String(tindakanBaru).trim();
+      if (!tindakanBersih) {
+        alert('Tindakan tidak boleh kosong.');
+        return;
+      }
+
+      const keteranganBaru = prompt(
+        'Edit Keterangan untuk:\n' + (rec.namaAssignment || '-'),
+        String(rec.keterangan || '')
+      );
+      if (keteranganBaru === null) return;
+
+      try {
+        await postProgressAction({
+          action: 'updateAssignment',
+          rowIndex: rec.rowIndex,
+          jenisTindakan: tindakanBersih,
+          keterangan: String(keteranganBaru).trim()
+        });
+
+        alert('Data berhasil diperbarui.');
+        await maybeLoadProgress();
+        await refreshLaporanData();
+      } catch (error) {
+        alert('Gagal memperbarui data: ' + (error.message || error));
+      }
+    }
+
+    async function deleteProgressAssignment(rec) {
+      if (!rec || !rec.rowIndex) {
+        alert('Row index tidak ditemukan. Silakan muat ulang data progres.');
+        return;
+      }
+
+      const yakin = confirm(
+        'Hapus assignment berikut dari Laporan?\n\n' +
+        (rec.namaAssignment || '-') +
+        '\n\nData yang dihapus tidak dapat dikembalikan.'
+      );
+
+      if (!yakin) return;
+
+      try {
+        await postProgressAction({
+          action: 'deleteAssignment',
+          rowIndex: rec.rowIndex
+        });
+
+        alert('Data berhasil dihapus.');
+        await maybeLoadProgress();
+        await refreshLaporanData();
+      } catch (error) {
+        alert('Gagal menghapus data: ' + (error.message || error));
+      }
+    }
+
+    async function refreshLaporanData() {
+      try {
+        const response = await fetch(`${SCRIPT_URL}?t=${Date.now()}`, {
+          method: 'GET',
+          mode: 'cors',
+          cache: 'no-store',
+          redirect: 'follow'
+        });
+        const json = await response.json();
+        if (!response.ok || !json || json.success !== true) return;
+
+        laporanResponse = json;
+        laporanData = Array.isArray(json.laporanData) ? json.laporanData : [];
+        allRecords = laporanData;
+        renderHistory(allRecords);
+        populateSuratMenu();
+      } catch (error) {
+        console.error('Gagal menyegarkan data laporan:', error);
+      }
     }
 
     // =====================================================
