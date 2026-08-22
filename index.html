@@ -326,6 +326,44 @@
       </div>
     </form>
 
+    <!-- Edit Progres Modal -->
+    <div id="progress-edit-modal" class="hidden">
+      <div class="modal-overlay" id="progress-edit-overlay">
+        <div class="modal-content bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-11 h-11 rounded-full bg-amber-100 flex items-center justify-center">
+              <i data-lucide="pencil" class="text-amber-600" style="width:22px;height:22px;"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-slate-900">Update Assignment</h3>
+              <p id="progress-edit-assignment" class="text-xs text-slate-500 mt-0.5"></p>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="progress-edit-tindakan" class="block mb-1.5 font-semibold text-sm text-slate-800">Tindakan</label>
+            <select id="progress-edit-tindakan" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm bg-white focus:ring-2 focus:ring-[#0061A8]/30">
+              <option value="">-- Pilih Tindakan --</option>
+              <option value="Sudah Sesuai">Sudah Sesuai</option>
+              <option value="Salah SLS">Salah SLS</option>
+              <option value="Berubah Status">Berubah Status</option>
+              <option value="Ditemukan">Ditemukan</option>
+            </select>
+          </div>
+
+          <div class="mb-5">
+            <label for="progress-edit-keterangan" class="block mb-1.5 font-semibold text-sm text-slate-800">Keterangan</label>
+            <textarea id="progress-edit-keterangan" rows="3" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#0061A8]/30" placeholder="Tuliskan keterangan tindakan..."></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="progress-edit-cancel" class="py-2.5 rounded-xl font-semibold text-sm border border-slate-300 text-slate-700 bg-white">Batal</button>
+            <button type="button" id="progress-edit-save" class="py-2.5 rounded-xl font-semibold text-sm bg-[#0061A8] text-white disabled:opacity-50">Simpan Update</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Success Modal -->
     <div id="success-modal" class="hidden">
       <div class="modal-overlay" id="modal-overlay">
@@ -333,8 +371,8 @@
           <div class="checkmark-circle w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <i data-lucide="check" class="text-green-600" style="width:32px;height:32px;"></i>
           </div>
-          <h3 class="font-bold text-lg mb-1 text-slate-900">Konfirmasi berhasil disimpan</h3>
-          <p class="text-sm text-slate-500 mb-5">Data telah tersimpan dengan sukses</p>
+          <h3 id="success-modal-title" class="font-bold text-lg mb-1 text-slate-900">Konfirmasi berhasil disimpan</h3>
+          <p id="success-modal-message" class="text-sm text-slate-500 mb-5">Data telah tersimpan dengan sukses</p>
           <button type="button" id="modal-close-btn" class="w-full py-2.5 rounded-xl font-semibold text-sm bg-[#0061A8] text-white">Tutup</button>
         </div>
       </div>
@@ -911,7 +949,11 @@
       setTimeout(() => { submitBtn.textContent = 'Simpan Konfirmasi'; }, 2000);
     }
 
-    function showSuccessModal() {
+    function showSuccessModal(title = 'Konfirmasi berhasil disimpan', message = 'Data telah tersimpan dengan sukses') {
+      const titleEl = document.getElementById('success-modal-title');
+      const messageEl = document.getElementById('success-modal-message');
+      if (titleEl) titleEl.textContent = title;
+      if (messageEl) messageEl.textContent = message;
       document.getElementById('success-modal').classList.remove('hidden');
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
@@ -1245,53 +1287,76 @@
       return result;
     }
 
+    let progressEditRecord = null;
+
+    function closeProgressEditModal() {
+      progressEditRecord = null;
+      document.getElementById('progress-edit-modal')?.classList.add('hidden');
+    }
+
     async function editProgressAssignment(rec) {
       if (!rec || !rec.rowIndex) {
         alert('Row index tidak ditemukan. Silakan muat ulang data progres.');
         return;
       }
 
-      const pilihan = [
-        'Sudah Sesuai',
-        'Salah SLS',
-        'Berubah Status',
-        'Ditemukan'
-      ];
+      progressEditRecord = rec;
 
-      const tindakanAwal = String(rec.jenisTindakan || '').trim();
-      const pesanTindakan =
-        'Edit Tindakan untuk:\n' + (rec.namaAssignment || '-') +
-        '\n\nPilihan: ' + pilihan.join(' / ') +
-        '\n\nMasukkan tindakan:';
+      const assignmentEl = document.getElementById('progress-edit-assignment');
+      const tindakanEl = document.getElementById('progress-edit-tindakan');
+      const keteranganEl = document.getElementById('progress-edit-keterangan');
 
-      const tindakanBaru = prompt(pesanTindakan, tindakanAwal);
-      if (tindakanBaru === null) return;
+      if (assignmentEl) assignmentEl.textContent = rec.namaAssignment || '-';
+      if (tindakanEl) {
+        const tindakanAwal = String(rec.jenisTindakan || '').trim();
+        tindakanEl.value = tindakanAwal.startsWith('Berubah') ? 'Berubah Status' : tindakanAwal;
+      }
+      if (keteranganEl) keteranganEl.value = String(rec.keterangan || '');
 
-      const tindakanBersih = String(tindakanBaru).trim();
-      if (!tindakanBersih) {
-        alert('Tindakan tidak boleh kosong.');
+      document.getElementById('progress-edit-modal')?.classList.remove('hidden');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    async function saveProgressEdit() {
+      const rec = progressEditRecord;
+      if (!rec || !rec.rowIndex) return;
+
+      const tindakanEl = document.getElementById('progress-edit-tindakan');
+      const keteranganEl = document.getElementById('progress-edit-keterangan');
+      const saveBtn = document.getElementById('progress-edit-save');
+
+      const tindakanBaru = String(tindakanEl?.value || '').trim();
+      const keteranganBaru = String(keteranganEl?.value || '').trim();
+
+      if (!tindakanBaru) {
+        tindakanEl?.focus();
         return;
       }
 
-      const keteranganBaru = prompt(
-        'Edit Keterangan untuk:\n' + (rec.namaAssignment || '-'),
-        String(rec.keterangan || '')
-      );
-      if (keteranganBaru === null) return;
-
       try {
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Menyimpan...';
+        }
+
         await postProgressAction({
           action: 'updateAssignment',
           rowIndex: rec.rowIndex,
-          jenisTindakan: tindakanBersih,
-          keterangan: String(keteranganBaru).trim()
+          jenisTindakan: tindakanBaru,
+          keterangan: keteranganBaru
         });
 
-        alert('Data berhasil diperbarui.');
+        closeProgressEditModal();
         await maybeLoadProgress();
         await refreshLaporanData();
+        showSuccessModal('Update berhasil disimpan', 'Data assignment telah berhasil diperbarui');
       } catch (error) {
         alert('Gagal memperbarui data: ' + (error.message || error));
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Simpan Update';
+        }
       }
     }
 
@@ -1315,9 +1380,9 @@
           rowIndex: rec.rowIndex
         });
 
-        alert('Data berhasil dihapus.');
         await maybeLoadProgress();
         await refreshLaporanData();
+        showSuccessModal('Assignment berhasil dihapus', 'Data assignment telah berhasil dihapus');
       } catch (error) {
         alert('Gagal menghapus data: ' + (error.message || error));
       }
@@ -1704,6 +1769,17 @@
 
         const progressSls = document.getElementById('progress-sls');
         if (progressSls) progressSls.addEventListener('change', maybeLoadProgress);
+
+        const editSaveBtn = document.getElementById('progress-edit-save');
+        if (editSaveBtn) editSaveBtn.addEventListener('click', saveProgressEdit);
+
+        const editCancelBtn = document.getElementById('progress-edit-cancel');
+        if (editCancelBtn) editCancelBtn.addEventListener('click', closeProgressEditModal);
+
+        const editOverlay = document.getElementById('progress-edit-overlay');
+        if (editOverlay) editOverlay.addEventListener('click', e => {
+          if (e.target === e.currentTarget) closeProgressEditModal();
+        });
 
         const modeEntriBtn = document.getElementById('mode-entri-btn');
         if (modeEntriBtn) modeEntriBtn.addEventListener('click', () => setProgressMode('entri'));
