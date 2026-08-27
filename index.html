@@ -138,7 +138,7 @@
           </div>
           <div>
             <label for="surat-desa" class="block mb-1 font-semibold text-sm text-slate-800">Nama Desa</label>
-            <input id="surat-desa" type="text" class="w-full border-2 border-[#0061A8] rounded-xl px-4 py-3 text-sm bg-blue-50/30 focus:ring-2 focus:ring-[#0061A8]/30">
+            <input id="surat-desa" type="text" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm bg-slate-50">
           </div>
           <div>
             <label for="surat-tanggal" class="block mb-1 font-semibold text-sm text-slate-800">Tanggal TTD</label>
@@ -1476,13 +1476,75 @@
     // =====================================================
     // SURAT KONFIRMASI KETUA SLS (WITH SEARCHABLE DROPDOWN)
     // =====================================================
-    function suratRows(slsValue) {
-      const selectedSlsNormalized = normalizeText(slsValue);
-      const rows = Array.isArray(laporanData) ? laporanData : [];
-      return rows.filter(item =>
-        normalizeText(item.nama_sls) === selectedSlsNormalized &&
-        normalizeText(item.tindakan) === 'sudah sesuai'
+    function getLaporanDesa(item) {
+      if (!item) return '';
+
+      const directDesa = String(
+        item.nama_desa || item.Nama_Desa || item.desa || ''
+      ).trim();
+      if (directDesa) return directDesa;
+
+      if (!Array.isArray(csvData) || csvData.length === 0) return '';
+
+      const targetSls = normalizeText(item.nama_sls);
+      const targetPpl = normalizeText(extractPPLName(item.nama_ppl));
+      const targetUsaha = normalizeText(item.nama_usaha);
+      const targetAssignment = normalizeText(item.nama_assignment);
+
+      // Pencocokan paling spesifik agar SLS bernama sama di desa berbeda tidak tercampur.
+      let matchRow = csvData.find(r =>
+        normalizeText(getVal(r, COL_SLS)) === targetSls &&
+        normalizeText(extractPPLName(getVal(r, COL_PPL))) === targetPpl &&
+        normalizeText(getVal(r, COL_USAHA)) === targetUsaha &&
+        normalizeText(getVal(r, COL_ASSIGNMENT)) === targetAssignment
       );
+
+      // Fallback jika salah satu kolom usaha/assignment kosong.
+      if (!matchRow && targetAssignment) {
+        matchRow = csvData.find(r =>
+          normalizeText(getVal(r, COL_SLS)) === targetSls &&
+          normalizeText(extractPPLName(getVal(r, COL_PPL))) === targetPpl &&
+          normalizeText(getVal(r, COL_ASSIGNMENT)) === targetAssignment
+        );
+      }
+
+      if (!matchRow && targetUsaha) {
+        matchRow = csvData.find(r =>
+          normalizeText(getVal(r, COL_SLS)) === targetSls &&
+          normalizeText(extractPPLName(getVal(r, COL_PPL))) === targetPpl &&
+          normalizeText(getVal(r, COL_USAHA)) === targetUsaha
+        );
+      }
+
+      if (!matchRow) {
+        matchRow = csvData.find(r =>
+          normalizeText(getVal(r, COL_SLS)) === targetSls &&
+          normalizeText(extractPPLName(getVal(r, COL_PPL))) === targetPpl
+        );
+      }
+
+      if (!matchRow) return '';
+
+      return String(
+        getVal(matchRow, COL_DESA) ||
+        getVal(matchRow, 'Nama Desa') ||
+        getVal(matchRow, 'nama_desa') ||
+        ''
+      ).trim();
+    }
+
+    function suratRows(slsValue, desaValue) {
+      const selectedSlsNormalized = normalizeText(slsValue);
+      const selectedDesaNormalized = normalizeText(desaValue);
+      const rows = Array.isArray(laporanData) ? laporanData : [];
+
+      return rows.filter(item => {
+        if (normalizeText(item.nama_sls) !== selectedSlsNormalized) return false;
+        if (normalizeText(item.tindakan) !== 'sudah sesuai') return false;
+
+        const itemDesa = normalizeText(getLaporanDesa(item));
+        return itemDesa === selectedDesaNormalized;
+      });
     }
 
     function populateSuratMenu() {
@@ -1503,28 +1565,7 @@
         const rawSls = String(item.nama_sls || '').trim();
         if (!rawSls) return;
 
-        const rawPpl = String(item.nama_ppl || '').trim();
-
-        // Pencocokan nama desa dari csvData (Sheet1)
-        let matchedDesa = '';
-        if (Array.isArray(csvData) && csvData.length > 0) {
-          const matchRow = csvData.find(r => 
-            normalizeText(getVal(r, COL_SLS)) === normalizeText(rawSls) &&
-            normalizeText(extractPPLName(getVal(r, COL_PPL))) === normalizeText(extractPPLName(rawPpl))
-          );
-          if (matchRow) {
-            matchedDesa = getVal(matchRow, COL_DESA) || getVal(matchRow, 'Nama Desa') || getVal(matchRow, 'nama_desa');
-          }
-        }
-
-        if (!matchedDesa && Array.isArray(csvData) && csvData.length > 0) {
-          const fallbackRow = csvData.find(r => normalizeText(getVal(r, COL_SLS)) === normalizeText(rawSls));
-          if (fallbackRow) {
-            matchedDesa = getVal(fallbackRow, COL_DESA) || getVal(fallbackRow, 'Nama Desa') || getVal(fallbackRow, 'nama_desa');
-          }
-        }
-
-        const namaDesa = String(matchedDesa || item.nama_desa || item.Nama_Desa || item.desa || '').trim();
+        const namaDesa = getLaporanDesa(item);
         const key = `${normalizeText(rawSls)}___${normalizeText(namaDesa)}`;
 
         if (!slsGroupMap[key]) {
@@ -1623,7 +1664,7 @@
         return null;
       }
 
-      const rows = suratRows(sls);
+      const rows = suratRows(sls, desa);
       if (rows.length === 0) {
         alert("Tidak ada data assignment dengan tindakan 'Sudah Sesuai' untuk SLS ini.");
         return null;
