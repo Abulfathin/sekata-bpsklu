@@ -438,6 +438,20 @@
     let laporanResponse = null;
     let progressMode = 'entri';
 
+    // =====================================================
+    // CACHE LOKAL (IndexedDB)
+    // =====================================================
+    const CACHE_DB_NAME = 'sekata-offline-cache';
+    const CACHE_DB_VERSION = 1;
+    const CACHE_STORE = 'app-cache';
+    const MASTER_CACHE_KEY = 'master-data-v1';
+    const MASTER_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 jam
+
+    let suratSummaryData = [];
+    let suratMenuItems = [];
+    let suratDetailData = [];
+    let suratSelectedSls = '';
+
     let COL_PPL = 'PPL';
     let COL_SLS = 'Nama SLS';
     let COL_USAHA = 'nama_usaha';
@@ -496,6 +510,132 @@
     }
 
     // =====================================================
+    // INDEXEDDB: CACHE DATA MASTER DI HP PETUGAS
+    // =====================================================
+    function openCacheDB() {
+      return new Promise((resolve, reject) => {
+        if (!('indexedDB' in window)) {
+          reject(new Error('IndexedDB tidak tersedia di browser ini'));
+          return;
+        }
+
+        const request = indexedDB.open(CACHE_DB_NAME, CACHE_DB_VERSION);
+
+        request.onupgradeneeded = event => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(CACHE_STORE)) {
+            db.createObjectStore(CACHE_STORE, { keyPath: 'key' });
+          }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error('Gagal membuka IndexedDB'));
+      });
+    }
+
+    async function cacheGet(key) {
+      const db = await openCacheDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(CACHE_STORE, 'readonly');
+        const store = tx.objectStore(CACHE_STORE);
+        const req = store.get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+        tx.oncomplete = () => db.close();
+      });
+    }
+
+    async function cachePut(key, value) {
+      const db = await openCacheDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(CACHE_STORE, 'readwrite');
+        tx.objectStore(CACHE_STORE).put({
+          key,
+          savedAt: Date.now(),
+          value
+        });
+        tx.oncomplete = () => {
+          db.close();
+          resolve(true);
+        };
+        tx.onerror = () => {
+          db.close();
+          reject(tx.error);
+        };
+      });
+    }
+
+    async function fetchJson(url, options = {}) {
+      const response = await fetch(url, {
+        mode: 'cors',
+        cache: 'no-store',
+        redirect: 'follow',
+        ...options
+      });
+
+      const text = await response.text();
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        throw new Error('Server mengembalikan response yang bukan JSON');
+      }
+
+      if (!response.ok || !json || json.success !== true) {
+        throw new Error(json?.message || `Request gagal (${response.status})`);
+      }
+
+      return json;
+    }
+
+    function applyMasterData(master) {
+      csvData = Array.isArray(master?.data) ? master.data : [];
+      referenceData = Array.isArray(master?.reference) ? master.reference : [];
+
+      if (!csvData.length) {
+        throw new Error('Data master Sheet1 kosong');
+      }
+
+      detectColumns(csvData[0]);
+      populateSLSTujuan();
+      populatePPL();
+      populateProgressPPL();
+    }
+
+    async function fetchMasterData() {
+      return fetchJson(
+        `${SCRIPT_URL}?action=getMasterData&t=${Date.now()}`
+      );
+    }
+
+    async function refreshMasterCacheInBackground() {
+      try {
+        const fresh = await fetchMasterData();
+        await cachePut(MASTER_CACHE_KEY, {
+          data: fresh.data || [],
+          reference: fresh.reference || []
+        });
+        console.log('Cache master diperbarui. Data terbaru akan otomatis dipakai pada pembukaan berikutnya.');
+      } catch (error) {
+        console.warn('Background refresh master gagal:', error);
+      }
+    }
+
+    async function loadRecentReports() {
+      try {
+        const json = await fetchJson(
+          `${SCRIPT_URL}?action=getRecentReports&limit=10&t=${Date.now()}`
+        );
+
+        laporanData = Array.isArray(json.data) ? json.data : [];
+        allRecords = laporanData;
+        renderHistory(allRecords);
+      } catch (error) {
+        console.warn('Riwayat terbaru gagal dimuat:', error);
+      }
+    }
+
+    // =====================================================
     // DETEKSI KOLOM
     // =====================================================
     function detectColumns(row) {
@@ -515,49 +655,56 @@
     }
 
     // =====================================================
-    // LOAD DATA FETCH
+    // LOAD DATA: UTAMAKAN CACHE HP, JANGAN DOWNLOAD LAPORAN PENUH
     // =====================================================
     async function loadCSV() {
       try {
-        const response = await fetch(`${SCRIPT_URL}?t=${Date.now()}`, {
-          method: 'GET',
-          mode: 'cors',
-          cache: 'no-store',
-          redirect: 'follow'
-        });
+        let cached = null;
 
-        const responseText = await response.text();
-        let json;
         try {
-          json = JSON.parse(responseText);
-        } catch (parseError) {
-          throw new Error('Gagal memproses JSON dari Google Sheet');
+          cached = await cacheGet(MASTER_CACHE_KEY);
+        } catch (cacheError) {
+          console.warn('IndexedDB tidak dapat dibaca:', cacheError);
         }
 
-        if (!response.ok || !json || json.success !== true) {
-          throw new Error(json?.message || 'Gagal mengambil data dari Google Sheet');
+        if (cached?.value?.data?.length) {
+          // Form bisa langsung hidup dari data di HP.
+          applyMasterData(cached.value);
+
+          document.getElementById('loading-state').classList.add('hidden');
+          document.getElementById('assignment-form').classList.remove('hidden');
+
+          // Riwayat hanya 10 terbaru, dimuat terpisah.
+          loadRecentReports();
+
+          // Master besar hanya diperbarui jika cache sudah lebih dari 6 jam.
+          const age = Date.now() - Number(cached.savedAt || 0);
+          if (age > MASTER_CACHE_MAX_AGE_MS) {
+            refreshMasterCacheInBackground();
+          }
+
+          return;
         }
 
-        laporanResponse = json;
-        csvData = Array.isArray(json.data) ? json.data : [];
-        laporanData = Array.isArray(json.laporanData) ? json.laporanData : [];
-        referenceData = Array.isArray(json.reference) ? json.reference : [];
+        // Pertama kali di HP/browser ini: ambil master sekali lalu simpan lokal.
+        const fresh = await fetchMasterData();
+        const master = {
+          data: Array.isArray(fresh.data) ? fresh.data : [],
+          reference: Array.isArray(fresh.reference) ? fresh.reference : []
+        };
 
-        if (csvData.length > 0) {
-          detectColumns(csvData[0]);
+        applyMasterData(master);
+
+        try {
+          await cachePut(MASTER_CACHE_KEY, master);
+        } catch (cacheError) {
+          console.warn('Gagal menyimpan cache master:', cacheError);
         }
-
-        populateSLSTujuan();
-        populatePPL();
-        populateProgressPPL();
-        populateSuratMenu();
-
-        // Tampilkan 10 riwayat terbaru dari data Laporan
-        allRecords = laporanData;
-        renderHistory(allRecords);
 
         document.getElementById('loading-state').classList.add('hidden');
         document.getElementById('assignment-form').classList.remove('hidden');
+
+        loadRecentReports();
 
       } catch (error) {
         console.error(error);
@@ -943,6 +1090,12 @@
         await saveToGoogleSheet(record);
         showSuccessModal();
         resetForm();
+
+        // Hanya tarik 10 riwayat terbaru; tidak pernah download seluruh sheet Laporan.
+        loadRecentReports();
+
+        // Ringkasan surat mungkin berubah setelah submit.
+        suratSummaryData = [];
       } catch (err) {
         submitBtn.textContent = err.message || 'Gagal, coba lagi';
         setTimeout(() => { submitBtn.textContent = 'Simpan Konfirmasi'; }, 2000);
@@ -1221,32 +1374,262 @@
       maybeLoadProgress();
     }
 
-    async function maybeLoadProgress() {
-      const ppl = (document.getElementById('progress-ppl').value || '').trim();
-      const sls = (document.getElementById('progress-sls').value || '').trim();
+    // =====================================================
+    // CACHE PROGRES RINGAN
+    // =====================================================
+    const PROGRESS_CACHE_MAX_AGE_MS = 2 * 60 * 1000;
+
+    function progressCacheKey(mode, ppl, sls) {
+      return [
+        'progress-v2',
+        mode,
+        norm(ppl),
+        norm(sls)
+      ].join('|||');
+    }
+
+    function makeAssignmentKey(assignment, usaha) {
+      return (
+        norm(assignment) +
+        '|||' +
+        norm(usaha)
+      );
+    }
+
+    function computeUnenteredFromLocalMaster(
+      ppl,
+      sls,
+      enteredKeys
+    ) {
+      const targetPpl = norm(
+        extractPPLName(ppl)
+      );
+      const targetSls = norm(sls);
+
+      const entered = new Set(
+        (enteredKeys || []).map(
+          v => String(v || '')
+        )
+      );
+
+      const seen = new Set();
+      const result = [];
+
+      csvData.forEach(row => {
+        const rowPpl = extractPPLName(
+          getVal(row, COL_PPL)
+        );
+
+        const rowSls = String(
+          getVal(row, COL_SLS) || ''
+        ).trim();
+
+        if (
+          norm(rowPpl) !== targetPpl ||
+          norm(rowSls) !== targetSls
+        ) {
+          return;
+        }
+
+        const namaUsaha = String(
+          getVal(row, COL_USAHA) || ''
+        ).trim();
+
+        const namaAssignment = String(
+          getVal(row, COL_ASSIGNMENT) || ''
+        ).trim();
+
+        if (!namaUsaha) return;
+
+        const key = makeAssignmentKey(
+          namaAssignment,
+          namaUsaha
+        );
+
+        if (seen.has(key)) return;
+        seen.add(key);
+
+        if (!entered.has(key)) {
+          result.push({
+            namaUsaha,
+            namaAssignment
+          });
+        }
+      });
+
+      result.sort(
+        (a, b) =>
+          String(a.namaUsaha).localeCompare(
+            String(b.namaUsaha),
+            'id'
+          )
+      );
+
+      return result;
+    }
+
+    async function maybeLoadProgress(forceRefresh = false) {
+      const ppl = (
+        document.getElementById('progress-ppl').value || ''
+      ).trim();
+
+      const sls = (
+        document.getElementById('progress-sls').value || ''
+      ).trim();
+
       resetProgressResult();
+
       if (!ppl || !sls) return;
 
-      const loading = document.getElementById('progress-loading');
-      const hint = document.getElementById('progress-hint');
+      const loading =
+        document.getElementById('progress-loading');
+
+      const hint =
+        document.getElementById('progress-hint');
+
       if (hint) hint.classList.add('hidden');
-      if (loading) loading.classList.remove('hidden');
+
+      const cacheKey = progressCacheKey(
+        progressMode,
+        ppl,
+        sls
+      );
+
+      // Cache <= 2 menit ditampilkan langsung.
+      if (!forceRefresh) {
+        try {
+          const cached = await cacheGet(cacheKey);
+
+          if (
+            cached &&
+            Array.isArray(cached.value) &&
+            (Date.now() - Number(cached.savedAt || 0)) <
+              PROGRESS_CACHE_MAX_AGE_MS
+          ) {
+            renderProgressTable(cached.value);
+
+            // Refresh diam-diam agar tetap aktual.
+            setTimeout(() => {
+              maybeLoadProgress(true).catch(() => {});
+            }, 0);
+
+            return;
+          }
+        } catch (cacheError) {
+          console.warn(
+            'Cache progres tidak dapat dibaca:',
+            cacheError
+          );
+        }
+      }
+
+      if (loading) {
+        loading.classList.remove('hidden');
+      }
 
       try {
-        const action = progressMode === 'belum' ? 'getUnenteredAssignments' : 'getAssignments';
-        const url = `${SCRIPT_URL}?action=${encodeURIComponent(action)}&petugas=${encodeURIComponent(ppl)}&sls=${encodeURIComponent(sls)}&t=${Date.now()}`;
-        const response = await fetch(url, { method:'GET', mode:'cors', cache:'no-store', redirect:'follow' });
-        const result = await response.json();
-        if (!response.ok || !result || result.success !== true) {
-          throw new Error(result?.message || 'Gagal mengambil data progres');
+        let rows = [];
+
+        if (progressMode === 'belum') {
+          const url =
+            `${SCRIPT_URL}` +
+            `?action=getEnteredKeys` +
+            `&petugas=${encodeURIComponent(ppl)}` +
+            `&sls=${encodeURIComponent(sls)}` +
+            `&t=${Date.now()}`;
+
+          const response = await fetch(
+            url,
+            {
+              method: 'GET',
+              mode: 'cors',
+              cache: 'no-store',
+              redirect: 'follow'
+            }
+          );
+
+          const result = await response.json();
+
+          if (
+            !response.ok ||
+            !result ||
+            result.success !== true
+          ) {
+            throw new Error(
+              result?.message ||
+              'Gagal mengambil status assignment'
+            );
+          }
+
+          rows = computeUnenteredFromLocalMaster(
+            ppl,
+            sls,
+            Array.isArray(result.data)
+              ? result.data
+              : []
+          );
+
+        } else {
+          const url =
+            `${SCRIPT_URL}` +
+            `?action=getAssignments` +
+            `&petugas=${encodeURIComponent(ppl)}` +
+            `&sls=${encodeURIComponent(sls)}` +
+            `&t=${Date.now()}`;
+
+          const response = await fetch(
+            url,
+            {
+              method: 'GET',
+              mode: 'cors',
+              cache: 'no-store',
+              redirect: 'follow'
+            }
+          );
+
+          const result = await response.json();
+
+          if (
+            !response.ok ||
+            !result ||
+            result.success !== true
+          ) {
+            throw new Error(
+              result?.message ||
+              'Gagal mengambil data progres'
+            );
+          }
+
+          rows = Array.isArray(result.data)
+            ? result.data
+            : [];
         }
-        renderProgressTable(Array.isArray(result.data) ? result.data : []);
+
+        renderProgressTable(rows);
+
+        try {
+          await cachePut(cacheKey, rows);
+        } catch (cacheError) {
+          console.warn(
+            'Cache progres tidak dapat disimpan:',
+            cacheError
+          );
+        }
+
       } catch (error) {
-        const empty = document.getElementById('progress-empty');
-        empty.textContent = 'Error: ' + (error.message || 'Gagal memuat data');
+        const empty =
+          document.getElementById('progress-empty');
+
+        empty.textContent =
+          'Error: ' +
+          (error.message || 'Gagal memuat data');
+
         empty.classList.remove('hidden');
+
       } finally {
-        if (loading) loading.classList.add('hidden');
+        if (loading) {
+          loading.classList.add('hidden');
+        }
       }
     }
 
@@ -1453,178 +1836,376 @@
     }
 
     async function refreshLaporanData() {
-      try {
-        const response = await fetch(`${SCRIPT_URL}?t=${Date.now()}`, {
-          method: 'GET',
-          mode: 'cors',
-          cache: 'no-store',
-          redirect: 'follow'
-        });
-        const json = await response.json();
-        if (!response.ok || !json || json.success !== true) return;
+      await loadRecentReports();
 
-        laporanResponse = json;
-        laporanData = Array.isArray(json.laporanData) ? json.laporanData : [];
-        allRecords = laporanData;
-        renderHistory(allRecords);
-        populateSuratMenu();
-      } catch (error) {
-        console.error('Gagal menyegarkan data laporan:', error);
+      // Jika menu surat sedang terbuka, segarkan rekapnya juga.
+      const suratSection = document.getElementById('surat-section');
+      if (suratSection && !suratSection.classList.contains('hidden')) {
+        suratSummaryData = [];
+        suratMenuItems = [];
+        await populateSuratMenu(true);
       }
     }
 
     // =====================================================
     // SURAT KONFIRMASI KETUA SLS (WITH SEARCHABLE DROPDOWN)
     // =====================================================
-    function getLaporanDesa(item) {
-      if (!item) return '';
+    function suratRows(slsValue) {
+      if (normalizeText(slsValue) !== normalizeText(suratSelectedSls)) {
+        return [];
+      }
+      return Array.isArray(suratDetailData) ? suratDetailData : [];
+    }
 
-      const directDesa = String(
-        item.nama_desa || item.Nama_Desa || item.desa || ''
-      ).trim();
-      if (directDesa) return directDesa;
+    async function loadSuratDetail(sls) {
+      suratDetailData = [];
+      suratSelectedSls = sls || '';
 
-      if (!Array.isArray(csvData) || csvData.length === 0) return '';
+      if (!sls) return [];
 
-      const targetSls = normalizeText(item.nama_sls);
-      const targetPpl = normalizeText(extractPPLName(item.nama_ppl));
-      const targetUsaha = normalizeText(item.nama_usaha);
-      const targetAssignment = normalizeText(item.nama_assignment);
-
-      // Pencocokan paling spesifik agar SLS bernama sama di desa berbeda tidak tercampur.
-      let matchRow = csvData.find(r =>
-        normalizeText(getVal(r, COL_SLS)) === targetSls &&
-        normalizeText(extractPPLName(getVal(r, COL_PPL))) === targetPpl &&
-        normalizeText(getVal(r, COL_USAHA)) === targetUsaha &&
-        normalizeText(getVal(r, COL_ASSIGNMENT)) === targetAssignment
+      const json = await fetchJson(
+        `${SCRIPT_URL}?action=getSuratDetail&sls=${encodeURIComponent(sls)}&t=${Date.now()}`
       );
 
-      // Fallback jika salah satu kolom usaha/assignment kosong.
-      if (!matchRow && targetAssignment) {
-        matchRow = csvData.find(r =>
-          normalizeText(getVal(r, COL_SLS)) === targetSls &&
-          normalizeText(extractPPLName(getVal(r, COL_PPL))) === targetPpl &&
-          normalizeText(getVal(r, COL_ASSIGNMENT)) === targetAssignment
-        );
-      }
-
-      if (!matchRow && targetUsaha) {
-        matchRow = csvData.find(r =>
-          normalizeText(getVal(r, COL_SLS)) === targetSls &&
-          normalizeText(extractPPLName(getVal(r, COL_PPL))) === targetPpl &&
-          normalizeText(getVal(r, COL_USAHA)) === targetUsaha
-        );
-      }
-
-      if (!matchRow) {
-        matchRow = csvData.find(r =>
-          normalizeText(getVal(r, COL_SLS)) === targetSls &&
-          normalizeText(extractPPLName(getVal(r, COL_PPL))) === targetPpl
-        );
-      }
-
-      if (!matchRow) return '';
-
-      return String(
-        getVal(matchRow, COL_DESA) ||
-        getVal(matchRow, 'Nama Desa') ||
-        getVal(matchRow, 'nama_desa') ||
-        ''
-      ).trim();
+      suratDetailData = Array.isArray(json.data) ? json.data : [];
+      return suratDetailData;
     }
 
-    function suratRows(slsValue, desaValue) {
-      const selectedSlsNormalized = normalizeText(slsValue);
-      const selectedDesaNormalized = normalizeText(desaValue);
-      const rows = Array.isArray(laporanData) ? laporanData : [];
+    async function populateSuratMenu(force = false) {
+      const searchInput =
+        document.getElementById('search-surat-sls');
 
-      return rows.filter(item => {
-        if (normalizeText(item.nama_sls) !== selectedSlsNormalized) return false;
-        if (normalizeText(item.tindakan) !== 'sudah sesuai') return false;
+      const suratSlsList =
+        document.getElementById('surat-sls-list');
 
-        const itemDesa = normalizeText(getLaporanDesa(item));
-        return itemDesa === selectedDesaNormalized;
-      });
-    }
+      const hiddenInput =
+        document.getElementById('surat-sls');
 
-    function populateSuratMenu() {
-      const searchInput = document.getElementById('search-surat-sls');
-      const suratSlsList = document.getElementById('surat-sls-list');
-      const hiddenInput = document.getElementById('surat-sls');
-      const desaInput = document.getElementById('surat-desa');
+      const desaInput =
+        document.getElementById('surat-desa');
 
-      if (!Array.isArray(laporanData) || laporanData.length === 0) {
-        if (suratSlsList) suratSlsList.innerHTML = '<div class="px-3 py-2 text-slate-400 text-sm">Data Laporan tidak tersedia</div>';
+      const dropdown =
+        document.getElementById('surat-sls-dropdown');
+
+      if (
+        !searchInput ||
+        !suratSlsList ||
+        !hiddenInput
+      ) {
         return;
       }
 
-      const dataSudahSesuai = laporanData.filter(item => normalizeText(item.tindakan) === 'sudah sesuai');
+      if (
+        force ||
+        !Array.isArray(suratSummaryData) ||
+        suratSummaryData.length === 0
+      ) {
+        suratSlsList.innerHTML =
+          '<div class="px-3 py-2 text-slate-400 text-sm">Memuat daftar SLS...</div>';
 
-      const slsGroupMap = {};
-      dataSudahSesuai.forEach(item => {
-        const rawSls = String(item.nama_sls || '').trim();
-        if (!rawSls) return;
+        try {
+          const json = await fetchJson(
+            `${SCRIPT_URL}?action=getSuratSummary&t=${Date.now()}`
+          );
 
-        const namaDesa = getLaporanDesa(item);
-        const key = `${normalizeText(rawSls)}___${normalizeText(namaDesa)}`;
+          suratSummaryData =
+            Array.isArray(json.data)
+              ? json.data
+              : [];
 
-        if (!slsGroupMap[key]) {
-          slsGroupMap[key] = {
-            nama: rawSls,
-            nama_desa: namaDesa,
-            displayText: namaDesa ? `${rawSls} - DESA ${namaDesa}` : rawSls,
-            jumlah: 0
-          };
+          console.log(
+            'Rekap SLS surat:',
+            suratSummaryData
+          );
+
+        } catch (error) {
+          console.error(
+            'Gagal memuat rekap surat:',
+            error
+          );
+
+          suratSlsList.innerHTML =
+            '<div class="px-3 py-2 text-red-500 text-sm">Gagal memuat daftar SLS. Coba buka ulang menu Cetak Surat.</div>';
+
+          return;
         }
-        slsGroupMap[key].jumlah++;
-      });
+      }
 
-      const uniqueSls = Object.values(slsGroupMap).sort((a, b) =>
-        a.displayText.localeCompare(b.displayText, 'id')
-      );
+      // Buat ulang menu dari data terbaru.
+      suratMenuItems =
+        suratSummaryData
+          .map(item => {
+            const rawSls =
+              String(
+                item.nama_sls || ''
+              ).trim();
 
-      function render(filtered) {
+            let namaDesa =
+              String(
+                item.nama_desa || ''
+              ).trim();
+
+            // Nama desa tetap dicari dari master lokal HP.
+            if (
+              !namaDesa &&
+              rawSls &&
+              Array.isArray(csvData)
+            ) {
+              const match =
+                csvData.find(
+                  r =>
+                    normalizeText(
+                      getVal(r, COL_SLS)
+                    ) ===
+                    normalizeText(rawSls)
+                );
+
+              if (match) {
+                namaDesa =
+                  String(
+                    getVal(match, COL_DESA) ||
+                    getVal(match, 'Nama Desa') ||
+                    getVal(match, 'nama_desa') ||
+                    ''
+                  ).trim();
+              }
+            }
+
+            const jumlah =
+              Number(
+                item.jumlah || 0
+              );
+
+            return {
+              nama: rawSls,
+              nama_desa: namaDesa,
+              displayText:
+                namaDesa
+                  ? `${rawSls} - DESA ${namaDesa}`
+                  : rawSls,
+              jumlah
+            };
+          })
+          // FIX PENTING:
+          // Jangan lagi menyembunyikan SLS dengan jumlah 0.
+          .filter(
+            item => item.nama
+          )
+          .sort(
+            (a, b) =>
+              a.displayText.localeCompare(
+                b.displayText,
+                'id'
+              )
+          );
+
+      function renderSuratList(filtered) {
         suratSlsList.innerHTML = '';
+
         if (!filtered.length) {
-          suratSlsList.innerHTML = '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada hasil</div>';
+          suratSlsList.innerHTML =
+            '<div class="px-3 py-2 text-slate-400 text-sm">Tidak ada nama SLS/RT di sheet Laporan</div>';
+
           return;
         }
 
         filtered.forEach(item => {
-          const btn = document.createElement('button');
+          const btn =
+            document.createElement('button');
+
           btn.type = 'button';
-          btn.className = 'w-full text-left px-3 py-2.5 hover:bg-blue-50 rounded-lg text-sm font-medium border-b border-slate-100 last:border-none';
-          btn.innerHTML = `${esc(item.displayText)} <span class="text-xs text-slate-500">(${item.jumlah})</span>`;
-          btn.addEventListener('click', e => {
-            e.preventDefault();
-            searchInput.value = item.displayText;
-            hiddenInput.value = item.nama;
-            if (desaInput) desaInput.value = item.nama_desa;
-            document.getElementById('surat-sls-dropdown').classList.add('hidden');
-          });
-          suratSlsList.appendChild(btn);
+
+          btn.className =
+            'w-full text-left px-3 py-2.5 hover:bg-blue-50 rounded-lg text-sm font-medium border-b border-slate-100 last:border-none';
+
+          btn.innerHTML =
+            `<div>${esc(item.displayText)}</div>` +
+            `<div class="text-xs text-slate-500 mt-0.5">` +
+            `${item.jumlah} assignment Sudah Sesuai` +
+            `</div>`;
+
+          btn.addEventListener(
+            'click',
+            async e => {
+              e.preventDefault();
+
+              searchInput.value =
+                item.displayText;
+
+              hiddenInput.value =
+                item.nama;
+
+              if (desaInput) {
+                desaInput.value =
+                  item.nama_desa;
+              }
+
+              if (dropdown) {
+                dropdown.classList.add(
+                  'hidden'
+                );
+              }
+
+              suratDetailData = [];
+              suratSelectedSls =
+                item.nama;
+
+              const createBtn =
+                document.getElementById(
+                  'surat-create'
+                );
+
+              if (createBtn) {
+                createBtn.disabled = true;
+                createBtn.textContent =
+                  'Memuat Assignment...';
+              }
+
+              try {
+                const detail =
+                  await loadSuratDetail(
+                    item.nama
+                  );
+
+                console.log(
+                  `Detail surat ${item.nama}:`,
+                  detail.length,
+                  'record'
+                );
+
+                // Jangan dianggap error bila jumlahnya memang 0.
+                if (
+                  detail.length === 0
+                ) {
+                  console.log(
+                    'SLS ditemukan, tetapi belum ada tindakan Sudah Sesuai.'
+                  );
+                }
+
+              } catch (error) {
+                console.error(
+                  'Gagal memuat detail surat:',
+                  error
+                );
+
+                alert(
+                  'Gagal memuat daftar assignment untuk SLS ini.'
+                );
+
+              } finally {
+                if (createBtn) {
+                  createBtn.disabled =
+                    false;
+
+                  createBtn.textContent =
+                    'Buat Surat Konfirmasi';
+                }
+              }
+            }
+          );
+
+          suratSlsList.appendChild(
+            btn
+          );
         });
       }
 
-      render(uniqueSls);
+      // Saat menu dibuka, tampilkan seluruh SLS.
+      renderSuratList(
+        suratMenuItems
+      );
 
-      if (searchInput) {
-        searchInput.addEventListener('input', function() {
-          const keyword = norm(this.value);
-          render(uniqueSls.filter(item => norm(item.displayText).includes(keyword)));
-        });
+      // Pasang event hanya sekali.
+      // Event selalu membaca suratMenuItems GLOBAL terbaru,
+      // bukan closure list lama.
+      if (
+        !searchInput.dataset
+          .suratEventsBound
+      ) {
+        searchInput.dataset
+          .suratEventsBound = '1';
 
-        searchInput.addEventListener('focus', () => {
-          document.getElementById('surat-sls-dropdown').classList.remove('hidden');
-        });
+        searchInput.addEventListener(
+          'input',
+          function() {
+            const keyword =
+              norm(this.value);
+
+            hiddenInput.value = '';
+            suratSelectedSls = '';
+            suratDetailData = [];
+
+            const filtered =
+              suratMenuItems.filter(
+                item =>
+                  norm(
+                    item.displayText
+                  ).includes(
+                    keyword
+                  )
+              );
+
+            renderSuratList(
+              filtered
+            );
+
+            if (dropdown) {
+              dropdown.classList.remove(
+                'hidden'
+              );
+            }
+          }
+        );
+
+        searchInput.addEventListener(
+          'focus',
+          () => {
+            const keyword =
+              norm(
+                searchInput.value
+              );
+
+            const filtered =
+              suratMenuItems.filter(
+                item =>
+                  norm(
+                    item.displayText
+                  ).includes(
+                    keyword
+                  )
+              );
+
+            renderSuratList(
+              filtered
+            );
+
+            if (dropdown) {
+              dropdown.classList.remove(
+                'hidden'
+              );
+            }
+          }
+        );
+
+        document.addEventListener(
+          'click',
+          e => {
+            if (
+              dropdown &&
+              !e.target.closest(
+                '#search-surat-sls'
+              ) &&
+              !dropdown.contains(
+                e.target
+              )
+            ) {
+              dropdown.classList.add(
+                'hidden'
+              );
+            }
+          }
+        );
       }
-
-      document.addEventListener('click', e => {
-        const dropdown = document.getElementById('surat-sls-dropdown');
-        if (dropdown && !e.target.closest('#search-surat-sls') && !dropdown.contains(e.target)) {
-          dropdown.classList.add('hidden');
-        }
-      });
     }
 
     function showPage(page) {
@@ -1640,6 +2221,7 @@
 
       if (page === 'surat') {
         suratPage.classList.remove('hidden');
+        populateSuratMenu();
       } else if (page === 'progress') {
         progressPage.classList.remove('hidden');
         resetProgressResult();
@@ -1664,7 +2246,7 @@
         return null;
       }
 
-      const rows = suratRows(sls, desa);
+      const rows = suratRows(sls);
       if (rows.length === 0) {
         alert("Tidak ada data assignment dengan tindakan 'Sudah Sesuai' untuk SLS ini.");
         return null;
