@@ -451,6 +451,7 @@
     let suratMenuItems = [];
     let suratDetailData = [];
     let suratSelectedSls = '';
+    let suratSelectedIdsubsls = '';
 
     let COL_PPL = 'PPL';
     let COL_SLS = 'Nama SLS';
@@ -1851,23 +1852,79 @@
     // SURAT KONFIRMASI KETUA SLS (WITH SEARCHABLE DROPDOWN)
     // =====================================================
     function suratRows(slsValue) {
-      if (normalizeText(slsValue) !== normalizeText(suratSelectedSls)) {
+      if (
+        normalizeText(slsValue) !==
+        normalizeText(suratSelectedSls)
+      ) {
         return [];
       }
-      return Array.isArray(suratDetailData) ? suratDetailData : [];
+
+      if (!suratSelectedIdsubsls) {
+        return [];
+      }
+
+      return Array.isArray(suratDetailData)
+        ? suratDetailData.filter(
+            row =>
+              normalizeText(
+                row.idsubsls
+              ) ===
+              normalizeText(
+                suratSelectedIdsubsls
+              )
+          )
+        : [];
     }
 
-    async function loadSuratDetail(sls) {
+    async function loadSuratDetail(
+      sls,
+      idsubsls
+    ) {
       suratDetailData = [];
-      suratSelectedSls = sls || '';
+      suratSelectedSls =
+        sls || '';
+      suratSelectedIdsubsls =
+        idsubsls || '';
 
-      if (!sls) return [];
+      if (
+        !sls ||
+        !idsubsls
+      ) {
+        return [];
+      }
 
-      const json = await fetchJson(
-        `${SCRIPT_URL}?action=getSuratDetail&sls=${encodeURIComponent(sls)}&t=${Date.now()}`
-      );
+      const json =
+        await fetchJson(
+          `${SCRIPT_URL}` +
+          `?action=getSuratDetail` +
+          `&sls=${encodeURIComponent(sls)}` +
+          `&idsubsls=${encodeURIComponent(idsubsls)}` +
+          `&t=${Date.now()}`
+        );
 
-      suratDetailData = Array.isArray(json.data) ? json.data : [];
+      suratDetailData =
+        Array.isArray(json.data)
+          ? json.data
+          : [];
+
+      // Filter sekali lagi di browser sebagai pengaman.
+      suratDetailData =
+        suratDetailData.filter(
+          row =>
+            normalizeText(
+              row.idsubsls
+            ) ===
+            normalizeText(
+              idsubsls
+            ) &&
+            normalizeText(
+              row.nama_sls
+            ) ===
+            normalizeText(
+              sls
+            )
+        );
+
       return suratDetailData;
     }
 
@@ -1940,32 +1997,42 @@
                 item.nama_sls || ''
               ).trim();
 
+            const idsubsls =
+              String(
+                item.idsubsls || ''
+              ).trim();
+
             let namaDesa =
               String(
                 item.nama_desa || ''
               ).trim();
 
-            // Nama desa tetap dicari dari master lokal HP.
+            // PENTING:
+            // Cari desa berdasarkan IDSUBSLS / level_6_full_code.
+            // Jangan berdasarkan nama SLS karena nama SLS bisa sama
+            // di desa yang berbeda.
             if (
               !namaDesa &&
-              rawSls &&
+              idsubsls &&
               Array.isArray(csvData)
             ) {
-              const match =
+              const matchById =
                 csvData.find(
                   r =>
                     normalizeText(
-                      getVal(r, COL_SLS)
+                      getVal(r, COL_ID_SLS)
                     ) ===
-                    normalizeText(rawSls)
+                    normalizeText(
+                      idsubsls
+                    )
                 );
 
-              if (match) {
+              if (matchById) {
                 namaDesa =
                   String(
-                    getVal(match, COL_DESA) ||
-                    getVal(match, 'Nama Desa') ||
-                    getVal(match, 'nama_desa') ||
+                    getVal(matchById, COL_DESA) ||
+                    getVal(matchById, 'Nama Desa') ||
+                    getVal(matchById, 'nama_desa') ||
                     ''
                   ).trim();
               }
@@ -1978,18 +2045,21 @@
 
             return {
               nama: rawSls,
+              idsubsls: idsubsls,
               nama_desa: namaDesa,
               displayText:
                 namaDesa
                   ? `${rawSls} - DESA ${namaDesa}`
-                  : rawSls,
+                  : `${rawSls} - ID ${idsubsls}`,
               jumlah
             };
           })
           // FIX PENTING:
           // Jangan lagi menyembunyikan SLS dengan jumlah 0.
           .filter(
-            item => item.nama
+            item =>
+              item.nama &&
+              item.idsubsls
           )
           .sort(
             (a, b) =>
@@ -2049,6 +2119,8 @@
               suratDetailData = [];
               suratSelectedSls =
                 item.nama;
+              suratSelectedIdsubsls =
+                item.idsubsls;
 
               const createBtn =
                 document.getElementById(
@@ -2064,11 +2136,12 @@
               try {
                 const detail =
                   await loadSuratDetail(
-                    item.nama
+                    item.nama,
+                    item.idsubsls
                   );
 
                 console.log(
-                  `Detail surat ${item.nama}:`,
+                  `Detail surat ${item.nama} [${item.idsubsls}]:`,
                   detail.length,
                   'record'
                 );
@@ -2133,6 +2206,7 @@
 
             hiddenInput.value = '';
             suratSelectedSls = '';
+            suratSelectedIdsubsls = '';
             suratDetailData = [];
 
             const filtered =
@@ -2253,7 +2327,8 @@
       }
 
       return { 
-        nama_sls: sls, 
+        nama_sls: sls,
+        idsubsls: suratSelectedIdsubsls,
         nama_desa: desa, 
         tanggal_ttd: tanggal, 
         nama_ketua: ketua, 
