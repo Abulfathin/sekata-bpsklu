@@ -1034,7 +1034,10 @@
         sls_tujuan: record.sls_tujuan || '',
         tindakan: record.tindakan || '',
         keterangan: record.keterangan || '',
-        submitted_at: record.submitted_at || new Date().toISOString()
+        submitted_at: record.submitted_at || new Date().toISOString(),
+        // Otomatis dari Sheet1 -> level_6_full_code.
+        // Petugas tidak perlu mengisi IDSUBSLS secara manual.
+        idsubsls: record.idsubsls || ''
       };
 
       const response = await fetch(SCRIPT_URL, {
@@ -1081,7 +1084,11 @@
         sls_tujuan: selectedSLSTujuan,
         keterangan: keterangan,
         tindakan: tindakan,
-        submitted_at: new Date().toISOString()
+        submitted_at: new Date().toISOString(),
+
+        // select-sls.value berisi ID SLS dari Sheet1
+        // (level_6_full_code), bukan nama SLS.
+        idsubsls: String(slsSelectEl.value || '').trim()
       };
 
       submitBtn.disabled = true;
@@ -1866,12 +1873,8 @@
       return Array.isArray(suratDetailData)
         ? suratDetailData.filter(
             row =>
-              normalizeText(
-                row.idsubsls
-              ) ===
-              normalizeText(
-                suratSelectedIdsubsls
-              )
+              normalizeText(row.idsubsls) ===
+              normalizeText(suratSelectedIdsubsls)
           )
         : [];
     }
@@ -1881,48 +1884,32 @@
       idsubsls
     ) {
       suratDetailData = [];
-      suratSelectedSls =
-        sls || '';
-      suratSelectedIdsubsls =
-        idsubsls || '';
+      suratSelectedSls = sls || '';
+      suratSelectedIdsubsls = idsubsls || '';
 
-      if (
-        !sls ||
-        !idsubsls
-      ) {
+      if (!sls || !idsubsls) {
         return [];
       }
 
-      const json =
-        await fetchJson(
-          `${SCRIPT_URL}` +
-          `?action=getSuratDetail` +
-          `&sls=${encodeURIComponent(sls)}` +
-          `&idsubsls=${encodeURIComponent(idsubsls)}` +
-          `&t=${Date.now()}`
-        );
+      const json = await fetchJson(
+        `${SCRIPT_URL}` +
+        `?action=getSuratDetail` +
+        `&sls=${encodeURIComponent(sls)}` +
+        `&idsubsls=${encodeURIComponent(idsubsls)}` +
+        `&t=${Date.now()}`
+      );
 
       suratDetailData =
         Array.isArray(json.data)
           ? json.data
           : [];
 
-      // Filter sekali lagi di browser sebagai pengaman.
+      // Pengaman tambahan di browser.
       suratDetailData =
         suratDetailData.filter(
           row =>
-            normalizeText(
-              row.idsubsls
-            ) ===
-            normalizeText(
-              idsubsls
-            ) &&
-            normalizeText(
-              row.nama_sls
-            ) ===
-            normalizeText(
-              sls
-            )
+            normalizeText(row.idsubsls) ===
+            normalizeText(idsubsls)
         );
 
       return suratDetailData;
@@ -2002,41 +1989,10 @@
                 item.idsubsls || ''
               ).trim();
 
-            let namaDesa =
+            const namaDesa =
               String(
                 item.nama_desa || ''
               ).trim();
-
-            // PENTING:
-            // Cari desa berdasarkan IDSUBSLS / level_6_full_code.
-            // Jangan berdasarkan nama SLS karena nama SLS bisa sama
-            // di desa yang berbeda.
-            if (
-              !namaDesa &&
-              idsubsls &&
-              Array.isArray(csvData)
-            ) {
-              const matchById =
-                csvData.find(
-                  r =>
-                    normalizeText(
-                      getVal(r, COL_ID_SLS)
-                    ) ===
-                    normalizeText(
-                      idsubsls
-                    )
-                );
-
-              if (matchById) {
-                namaDesa =
-                  String(
-                    getVal(matchById, COL_DESA) ||
-                    getVal(matchById, 'Nama Desa') ||
-                    getVal(matchById, 'nama_desa') ||
-                    ''
-                  ).trim();
-              }
-            }
 
             const jumlah =
               Number(
@@ -2050,7 +2006,7 @@
               displayText:
                 namaDesa
                   ? `${rawSls} - DESA ${namaDesa}`
-                  : `${rawSls} - ID ${idsubsls}`,
+                  : rawSls,
               jumlah
             };
           })
@@ -2141,7 +2097,7 @@
                   );
 
                 console.log(
-                  `Detail surat ${item.nama} [${item.idsubsls}]:`,
+                  `Detail surat ${item.nama}:`,
                   detail.length,
                   'record'
                 );
